@@ -1,0 +1,14 @@
+ModeName 	              Syntax Example   Meaning
+imp Implied	              CLC              The instruction does not take an operand; it implicitly operates on registers.
+imm Immediate	          LDA #$10	       Loads the value $10 into A (not an address).
+zp	Zero Page	          LDA $20	       Loads from memory address $0020 (only the low byte is given).
+abs	Absolute	          LDA $1000	       Loads from memory address $1000.
+zpx	Zero Page,X	          LDA $20,X	       Loads from address $20 + X (wraps within page $00–$FF).
+abx	Absolute,X	          LDA $1000,X      Loads from $1000 + X. Used for tables and loops.
+zpy	Zero Page,Y	          LDA $20,Y	       Loads from $20 + Y (similar to ZPX but with Y).
+aby	Absolute,Y	          LDA $1000,Y	   Loads from $1000 + Y, like Absolute,X but with Y.
+inx	Indexed Indirect (X)  LDA ($20,X)	   First, ($20 + X) gives an address stored in zero page, then loads from that address.
+iny	Indirect Indexed (Y)  LDA ($20),Y      First, ($20) gives an address, then loads from address + Y.
+ind	Indirect	          JMP ($1000)	   Jumps to the address stored at $1000 (used only by JMP).
+acc	Accumulator	          LSR A	           Operates directly on the A register.
+rel	Relative	          BEQ LABEL	       Used for branch instructions. The operand is an offset relative to the current PC.

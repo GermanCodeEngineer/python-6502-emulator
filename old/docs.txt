@@ -1,0 +1,894 @@
+========================== INFORMATION ==========================
+ALL OPCODES:
+["adc", "and", "asl", "bcc", "bcs", "beq", "bit", "bmi", "bne", "bpl", "brk", "bvc", "bvs", "clc", "cld", "cli", "clv", "cmp", "cpx", "cpy", "dec", "dex", "dey", "eor", "inc", "inx", "iny", "jmp", "jsr", "lda", "ldx", "ldy", "lsr", "nop", "ora", "pha", "php", "pla", "plp", "rol", "ror", "rti", "rts", "sbc", "sec", "sed", "sei", "sta", "stx", "sty", "tax", "tay", "tsx", "txa", "txs", "tya"]
+MISSING:
+["jmp", "jsr", "lsr", "ora", "rol", "ror", "rti", "rts", "sbc"]
+IMPLEMENTED BY ME:
+["eor", "ora"]
+
+========================== ADC ==========================
+ADC - Add with Carry.
+
+A + M + C -> A, C
+
+Add Memory to Accumulator with Carry
+
++------+-------------------+-------------------------------+
+| Flag | Description       | State                         |
++======+===================+===============================+
+|  C   | Carry Flag        | Not affected                  |
++------+-------------------+-------------------------------+
+|  Z   | Zero Flag         | Set if result is zero         |
++------+-------------------+-------------------------------+
+|  I   | Interrupt Disable | Not affected                  |
++------+-------------------+-------------------------------+
+|  D   | Decimal Mode Flag | Not affected                  |
++------+-------------------+-------------------------------+
+|  B   | Break Command     | Not affected                  |
++------+-------------------+-------------------------------+
+|  V   | Overflow Flag     | Set if signed overflow occurs |
++------+-------------------+-------------------------------+
+|  N   | Negative Flag     | Set if bit 7 of result is set |
++------+-------------------+-------------------------------+
+
++-----------------+--------+-------+--------------------------+
+| Addressing Mode | Opcode | Bytes | Cycles                   |
++=================+========+=======+==========================+
+| Immediate       |  0x69  |   2   |   2                      |
++-----------------+--------+-------+--------------------------+
+| Zero Page       |  0x65  |   2   |   3                      |
++-----------------+--------+-------+--------------------------+
+| Zero Page, X    |  0x75  |   2   |   4                      |
++-----------------+--------+-------+--------------------------+
+| Absolute        |  0x6D  |   3   |   4                      |
++-----------------+--------+-------+--------------------------+
+| Absolute, X     |  0x7D  |   3   |   4 (+1 if page crossed) |
++-----------------+--------+-------+--------------------------+
+| Absolute, Y     |  0x79  |   3   |   4 (+1 if page crossed) |
++-----------------+--------+-------+--------------------------+
+| (Indirect, X)   |  0x61  |   2   |   6                      |
++-----------------+--------+-------+--------------------------+
+| (Indirect), Y   |  0x71  |   2   |   5 (+1 if page crossed) |
++-----------------+--------+-------+--------------------------+
+
+See also: SBC
+
+
+================== test_cpu_ins_clc.py ==================
+
+CLC - Clear Carry Flag.
+
+C = 0
+
+Set the carry flag to zero.
+
++------+-------------------+--------------+
+| Flag | Description       | State        |
++======+===================+==============+
+|  C   | Carry Flag        | Set to 0     |
++------+-------------------+--------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0x18  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: SEC
+
+
+================== test_cpu_ins_cld.py ==================
+
+CLD - Clear Decimal Mode.
+
+D = 0
+
+Sets the decimal mode flag to zero.
+
++------+-------------------+--------------+
+| Flag | Description       | State        |
++======+===================+==============+
++------+-------------------+--------------+
+|  D   | Decimal Mode Flag | Set to 0     |
++------+-------------------+--------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0xD8  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+NB:
+The state of the decimal flag is uncertain when the CPU is powered up and it
+is not reset when an interrupt is generated. In both cases you should include
+an explicit CLD to ensure that the flag is cleared before performing addition
+or subtraction.
+
+See also: SED
+
+
+================== test_cpu_ins_cli.py ==================
+
+CLI - Clear Interrupt Disable.
+
+I = 0
+
+Clears the interrupt disable flag allowing normal interrupt requests to be
+serviced.
+
++------+-------------------+--------------+
+| Flag | Description       | State        |
++======+===================+==============+
++------+-------------------+--------------+
+|  I   | Interrupt Disable | Set to 0     |
++------+-------------------+--------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0x58  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: SEI
+
+
+================== test_cpu_ins_clv.py ==================
+
+CLV - Clear Overflow Flag.
+
+V = 0
+
+Clears the overflow flag.
+
++------+-------------------+--------------+
+| Flag | Description       | State        |
++======+===================+==============+
++------+-------------------+--------------+
+|  V   | Overflow Flag     | Set to 0     |
++------+-------------------+--------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0xB8  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+
+================== test_cpu_ins_dec.py ==================
+
+DEC - Decrement Memory.
+
+M,Z,N = M-1
+
+Subtracts one from the value held at a specified memory location setting the
+zero and negative flags as appropriate.
+
++------+-------------------+-------------------------------+
+| Flag | Description       | State                         |
++======+===================+===============================+
+|  Z   | Zero Flag         | Set if result is zero         |
++------+-------------------+-------------------------------+
+|  N   | Negative Flag     | Set if bit 7 of result is set |
++------+-------------------+-------------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Zero Page       |  0xC6  |   2   |   5    |
++-----------------+--------+-------+--------+
+| Zero Page, X    |  0xD6  |   2   |   6    |
++-----------------+--------+-------+--------+
+| Absolute        |  0xCE  |   3   |   6    |
++-----------------+--------+-------+--------+
+| Absolute, X     |  0xDE  |   3   |   7    |
++-----------------+--------+-------+--------+
+
+See also: DEX, DEY
+
+
+
+================== test_cpu_ins_dex.py ==================
+
+DEX - Decrement X Register.
+
+X,Z,N = X-1
+
+Subtracts one from the X register setting the zero and negative flags as appropriate.
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set if X is zero         |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of X is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0xCA  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: DEC, DEY
+
+
+
+================== test_cpu_ins_dey.py ==================
+
+DEY - Decrement Y Register.
+
+Y,Z,N = Y-1
+
+Subtracts one from the Y register setting the zero and negative flags as appropriate.
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set if Y is zero         |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of Y is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0xC8  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: DEC, DEX
+
+
+
+================== test_cpu_ins_inc.py ==================
+
+INC - Increment Memory.
+
+M,Z,N = M+1
+
+Adds one to the value held at a specified memory location setting the zero and
+negative flags as appropriate.
+
++------+-------------------+-------------------------------+
+| Flag | Description       | State                         |
++======+===================+===============================+
++------+-------------------+-------------------------------+
+|  Z   | Zero Flag         | Set if result is zero         |
++------+-------------------+-------------------------------+
+|  N   | Negative Flag     | Set if bit 7 of result is set |
++------+-------------------+-------------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Zero Page       |  0xE6  |   2   |   5    |
++-----------------+--------+-------+--------+
+| Zero Page, X    |  0xF6  |   2   |   6    |
++-----------------+--------+-------+--------+
+| Absolute        |  0xEE  |   3   |   6    |
++-----------------+--------+-------+--------+
+| Absolute, X     |  0xFE  |   3   |   7    |
++-----------------+--------+-------+--------+
+
+See also: INX, INY
+
+
+
+================== test_cpu_ins_inx.py ==================
+
+INX - Increment X Register.
+
+X,Z,N = X+1
+
+Adds one to the X register setting the zero and negative flags as appropriate.
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set if X is zero         |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of X is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0xE8  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: INC, INY
+
+
+
+================== test_cpu_ins_iny.py ==================
+
+INY - Increment Y Register.
+
+Y,Z,N = Y+1
+
+Adds one to the Y register setting the zero and negative flags as appropriate.
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set if Y is zero         |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of Y is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0xC8  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: INC, INX
+
+
+
+================== test_cpu_ins_lda.py ==================
+
+LDA - Load Accumulator.
+
+A,Z,N = M
+
+Loads a byte of memory into the accumulator setting the zero and negative
+flags as appropriate.
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set is A = 0             |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of A is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------------------------+
+| Addressing Mode | Opcode | Bytes | Cycles                   |
++=================+========+=======+==========================+
+| Immediate       |  0xA9  |   2   |   2                      |
++-----------------+--------+-------+--------------------------+
+| Zero Page       |  0xA5  |   2   |   3                      |
++-----------------+--------+-------+--------------------------+
+| Zero Page, X    |  0xB5  |   2   |   5                      |
++-----------------+--------+-------+--------------------------+
+| Absolute        |  0xAD  |   3   |   4                      |
++-----------------+--------+-------+--------------------------+
+| Absolute, X     |  0xBD  |   3   |   4 (+1 if page crossed) |
++-----------------+--------+-------+--------------------------+
+| Absolute, Y     |  0xB9  |   3   |   4 (+1 if page crossed) |
++-----------------+--------+-------+--------------------------+
+| (Indirect, X)   |  0xA1  |   2   |   6                      |
++-----------------+--------+-------+--------------------------+
+| (Indirect), Y   |  0xB1  |   2   |   5 (+1 if page crossed) |
++-----------------+--------+-------+--------------------------+
+
+See also: LDX, LDY
+
+
+================== test_cpu_ins_ldx.py ==================
+
+LDX - Load X Register.
+
+X,Z,N = M
+
+Loads a byte of memory into the X register setting the zero and negative
+flags as appropriate.
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set is X = 0             |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of X is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------------------------+
+| Addressing Mode | Opcode | Bytes | Cycles                   |
++=================+========+=======+==========================+
+| Immediate       |  0xA2  |   2   |   2                      |
++-----------------+--------+-------+--------------------------+
+| Zero Page       |  0xA6  |   2   |   3                      |
++-----------------+--------+-------+--------------------------+
+| Zero Page, Y    |  0xB6  |   2   |   5                      |
++-----------------+--------+-------+--------------------------+
+| Absolute        |  0xAE  |   3   |   4                      |
++-----------------+--------+-------+--------------------------+
+| Absolute, Y     |  0xBE  |   3   |   4 (+1 if page crossed) |
++-----------------+--------+-------+--------------------------+
+
+See also: LDA, LDY
+
+
+================== test_cpu_ins_ldy.py ==================
+
+LDY - Load Y Register.
+
+Y,Z,N = M
+
+Loads a byte of memory into the Y register setting the zero and negative
+flags as appropriate.
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set is Y = 0             |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of Y is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------------------------+
+| Addressing Mode | Opcode | Bytes | Cycles                   |
++=================+========+=======+==========================+
+| Immediate       |  0xA0  |   2   |   2                      |
++-----------------+--------+-------+--------------------------+
+| Zero Page       |  0xA4  |   2   |   3                      |
++-----------------+--------+-------+--------------------------+
+| Zero Page, X    |  0xB4  |   2   |   5                      |
++-----------------+--------+-------+--------------------------+
+| Absolute        |  0xAC  |   3   |   4                      |
++-----------------+--------+-------+--------------------------+
+| Absolute, X     |  0xBC  |   3   |   4 (+1 if page crossed) |
++-----------------+--------+-------+--------------------------+
+
+See also: LDA, LDY
+
+
+================== test_cpu_ins_nop.py ==================
+
+NOP - No Operation.
+
+The NOP instruction causes no changes to the processor other than the normal
+incrementing of the program counter to the next instruction.
+
+Processor Status after use:
+
++------+-------------------+--------------+
+| Flag | Description       | State        |
++======+===================+==============+
++------+-------------------+--------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0xEA  |   1   |    2   |
++-----------------+--------+-------+--------+
+
+
+================== test_cpu_ins_pha.py ==================
+
+PHA - Push Accumulator.
+
+Pushes a copy of the accumulator on to the stack
+
+Processor Status after use:
+
++------+-------------------+--------------+
+| Flag | Description       | State        |
++======+===================+==============+
++------+-------------------+--------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0x48  |   1   |   3    |
++-----------------+--------+-------+--------+
+
+See also: PLA
+
+
+================== test_cpu_ins_php.py ==================
+
+PHP - Push Processor Status.
+
+Pushes a copy of the status flags on to the stack.
+
+Processor Status after use:
+
++------+-------------------+--------------+
+| Flag | Description       | State        |
++======+===================+==============+
++------+-------------------+--------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0x08  |   1   |   3    |
++-----------------+--------+-------+--------+
+
+See also: PLP
+
+
+================== test_cpu_ins_pla.py ==================
+
+PLA - Pull Accumulator.
+
+Pulls an 8 bit value from the stack and into the accumulator. The zero andi
+negative flags are set as appropriate.
+
+Processor Status after use:
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set is A = 0             |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of A is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0x68  |   1   |   4    |
++-----------------+--------+-------+--------+
+
+See also: PHA
+
+
+================== test_cpu_ins_plp.py ==================
+
+PLP - Pull Processor Status.
+
+Pulls an 8 bit value frm the stack and into the processor flags. The flags
+will take on new states as determined by value pulled.
+
+Processor Status after use:
+
++------+-------------------+----------------+
+| Flag | Description       | State          |
++======+===================+================+
+|  C   | Carry Flag        | Set from stack |
++------+-------------------+----------------+
+|  Z   | Zero Flag         | Set from stack |
++------+-------------------+----------------+
+|  I   | Interrupt Disable | Set from stack |
++------+-------------------+----------------+
+|  D   | Decimal Mode Flag | Set from stack |
++------+-------------------+----------------+
+|  B   | Break Command     | Set from stack |
++------+-------------------+----------------+
+|  V   | Overflow Flag     | Set from stack |
++------+-------------------+----------------+
+|  N   | Negative Flag     | Set from stack |
++------+-------------------+----------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0x28  |   1   |   4    |
++-----------------+--------+-------+--------+
+
+See also: PHP
+
+
+================== test_cpu_ins_sec.py ==================
+
+SEC - Set Carry Flag.
+
+C = 1
+
+Set the carry flag to one.
+
++------+-------------------+--------------+
+| Flag | Description       | State        |
++======+===================+==============+
+|  C   | Carry Flag        | Set to 1     |
++------+-------------------+--------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0x38  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: CLC
+
+
+================== test_cpu_ins_sed.py ==================
+
+SED - Set Decimal Flag.
+
+D = 1
+
+Sets the decimal mode flag to one.
+
++------+-------------------+--------------+
+| Flag | Description       | State        |
++======+===================+==============+
++------+-------------------+--------------+
+|  D   | Decimal Mode Flag | Set to 1     |
++------+-------------------+--------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0xF8  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: CLD
+
+
+================== test_cpu_ins_sei.py ==================
+
+SEI - Set Interrupt Disable.
+
+I = 1
+
+Sets the interrupt disable flag to zero.
+
++------+-------------------+--------------+
+| Flag | Description       | State        |
++======+===================+==============+
++------+-------------------+--------------+
+|  I   | Interrupt Disable | Set to 1     |
++------+-------------------+--------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0x78  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: CLI
+
+
+================== test_cpu_ins_sta.py ==================
+
+STA - Store Accumulator.
+
+M = A
+
+Stores the contents of the accumulator into memory.
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------------------------+
+| Addressing Mode | Opcode | Bytes | Cycles                   |
++=================+========+=======+==========================+
+| Zero Page       |  0x85  |   2   |   3                      |
++-----------------+--------+-------+--------------------------+
+| Zero Page, X    |  0x95  |   2   |   4                      |
++-----------------+--------+-------+--------------------------+
+| Absolute        |  0x8D  |   3   |   4                      |
++-----------------+--------+-------+--------------------------+
+| Absolute, X     |  0x9D  |   3   |   5                      |
++-----------------+--------+-------+--------------------------+
+| Absolute, Y     |  0x99  |   3   |   5                      |
++-----------------+--------+-------+--------------------------+
+| (Indirect, X)   |  0x81  |   2   |   6                      |
++-----------------+--------+-------+--------------------------+
+| (Indirect), Y   |  0x91  |   2   |   6                      |
++-----------------+--------+-------+--------------------------+
+
+See also: STX, STY
+
+
+================== test_cpu_ins_stx.py ==================
+
+STX - Store X Register.
+
+M = X
+
+Stores the contents of the X register into memory.
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------------------------+
+| Addressing Mode | Opcode | Bytes | Cycles                   |
++=================+========+=======+==========================+
+| Zero Page       |  0x86  |   2   |   3                      |
++-----------------+--------+-------+--------------------------+
+| Zero Page, Y    |  0x96  |   2   |   4                      |
++-----------------+--------+-------+--------------------------+
+| Absolute        |  0x8E  |   3   |   4                      |
++-----------------+--------+-------+--------------------------+
+
+See also: STA, STY
+
+
+================== test_cpu_ins_sty.py ==================
+
+STY - Store Y Register.
+
+M = Y
+
+Stores the contents of the Y register into memory.
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------------------------+
+| Addressing Mode | Opcode | Bytes | Cycles                   |
++=================+========+=======+==========================+
+| Zero Page       |  0x84  |   2   |   3                      |
++-----------------+--------+-------+--------------------------+
+| Zero Page, X    |  0x94  |   2   |   4                      |
++-----------------+--------+-------+--------------------------+
+| Absolute        |  0x8C  |   3   |   4                      |
++-----------------+--------+-------+--------------------------+
+
+See also: STY, STX
+
+
+================== test_cpu_ins_tax.py ==================
+
+TAX - Transfer Accumulator to X.
+
+X = A
+
+Copies the current contents of the accumulator into the X register and sets
+the zero and negative flags as appropriate.
+
+Processor Status after use:
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set is X = 0             |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of X is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0xAA  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: TXA
+
+
+================== test_cpu_ins_tay.py ==================
+
+TAY - Transfer Accumulator to Y.
+
+Y = A
+
+Copies the current contents of the accumulator into the Y register and sets
+the zero and negative flags as appropriate.
+
+Processor Status after use:
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set is Y = 0             |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of Y is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0xA8  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: TYA
+
+
+================== test_cpu_ins_tsx.py ==================
+
+TSX - Transfer Stack Pointer to X.
+
+X = S
+
+Copies the current contents of the stack register into the X register and sets
+the zero and negative flags as appropriate.
+
+Processor Status after use:
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set is X = 0             |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of X is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0xBA  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: TXS
+
+
+================== test_cpu_ins_txa.py ==================
+
+TXA - Transfer Register X to Accumulator.
+
+A = X
+
+Copies the current contents of the X register into the accumulator and sets
+the zero and negative flags as appropriate.
+
+Processor Status after use:
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set is A = 0             |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of A is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0x8A  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: TAX
+
+
+================== test_cpu_ins_txs.py ==================
+
+TXS - Transfer Register X to Stack Pointer.
+
+S = X
+
+Copies the current contents of the X register into the stack register.
+
+Processor Status after use:
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0x9A  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: TSX
+
+
+================== test_cpu_ins_tya.py ==================
+
+TYA - Transfer Register Y to Accumulator.
+
+A = Y
+
+Copies the current contents of the Y register into the accumulator and sets
+the zero and negative flags as appropriate.
+
+Processor Status after use:
+
++------+-------------------+--------------------------+
+| Flag | Description       | State                    |
++======+===================+==========================+
++------+-------------------+--------------------------+
+|  Z   | Zero Flag         | Set is A = 0             |
++------+-------------------+--------------------------+
+|  N   | Negative Flag     | Set if bit 7 of A is set |
++------+-------------------+--------------------------+
+
++-----------------+--------+-------+--------+
+| Addressing Mode | Opcode | Bytes | Cycles |
++=================+========+=======+========+
+| Implied         |  0x98  |   1   |   2    |
++-----------------+--------+-------+--------+
+
+See also: TAY
