@@ -1,9 +1,12 @@
 """Emulation of the MOT-6502 Processor."""
 
-import sys
-
 from . import Memory
 
+
+def is_little_endian() -> bool:
+    # Replace this implementation to change byteorder
+    import sys
+    return sys.byteorder == "little"
 
 class Processor(object):  # noqa: PLR904
     """
@@ -176,7 +179,7 @@ class Processor(object):  # noqa: PLR904
         :param address: The memory address to read from.
         :return: int
         """
-        if sys.byteorder == "little":
+        if is_little_endian():
             data = self._read_byte(address) | (self._read_byte(address + 1) << 8)
         else:
             data = (self._read_byte(address) << 8) | self._read_byte(address + 1)
@@ -204,7 +207,7 @@ class Processor(object):  # noqa: PLR904
         :param int address: The memory address to write to.
         :param int value: The word value (2 bytes) to write.
         """
-        if sys.byteorder == "little":
+        if is_little_endian():
             self._write_byte(address, value & 0xFF)
             self._write_byte(address + 1, (value >> 8) & 0xFF)
         else:
