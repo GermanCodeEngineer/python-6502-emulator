@@ -5,7 +5,7 @@ import sys
 from . import Memory
 
 
-class Processor:  # noqa: PLR904
+class Processor(object):  # noqa: PLR904
     """
     MOT-6502 Processor.
 

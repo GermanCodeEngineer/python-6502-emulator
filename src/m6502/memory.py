@@ -1,7 +1,7 @@
 """Emulation of the MOT-6502 memory."""
 
 
-class Memory:
+class Memory(object):
     """
     Memory bank for 6502 systems.
 
