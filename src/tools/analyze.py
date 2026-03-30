@@ -1,11 +1,17 @@
-import argparse
+import sys; from pathlib import Path
+sys.path.append(
+    str(Path(__file__).parent.parent)
+)
+
 import ast
+import argparse
+from ast_internal import ast_py
 from itertools import combinations, product
 from pathlib import Path
 
 
 def _format_type(value: object) -> str:
-    if isinstance(value, ast.AST):
+    if isinstance(value, ast_py.AST):
         return type(value).__name__
 
     if isinstance(value, list):
@@ -36,7 +42,7 @@ def _list_type_variations(values: list[object]) -> list[str]:
     return sorted(variations, key=lambda item: (item.count("|") + 1, item))
 
 
-def _format_line_range(node: ast.AST) -> str:
+def _format_line_range(node: ast_py.AST) -> str:
     start = getattr(node, "lineno", None)
     end = getattr(node, "end_lineno", start)
 
@@ -49,11 +55,11 @@ def _format_line_range(node: ast.AST) -> str:
     return f"[l.{start}-{end}]"
 
 
-def _signature_variations(node: ast.AST) -> set[str]:
+def _signature_variations(node: ast_py.AST) -> set[str]:
     field_names: list[str] = []
     field_variations: list[list[str]] = []
 
-    for field_name, value in ast.iter_fields(node):
+    for field_name, value in ast_py.iter_fields(node):
         field_names.append(field_name)
         if isinstance(value, list):
             field_variations.append(_list_type_variations(value))
@@ -71,11 +77,11 @@ def _signature_variations(node: ast.AST) -> set[str]:
     return signatures
 
 
-def _collect_node_signatures(tree: ast.AST) -> tuple[list[tuple[str, str]], list[str]]:
+def _collect_node_signatures(tree: ast_py.AST) -> tuple[list[tuple[str, str]], list[str]]:
     found: dict[str, str] = {}
     all_node_types: set[str] = set()
 
-    for node in ast.walk(tree):
+    for node in ast_py.walk(tree):
         all_node_types.add(type(node).__name__)
 
         for signature in _signature_variations(node):
@@ -86,8 +92,8 @@ def _collect_node_signatures(tree: ast.AST) -> tuple[list[tuple[str, str]], list
 def analyze(filename: Path) -> None:
     text = filename.read_text()
 
-    tree = ast.parse(text)
-    print(ast.dump(tree, indent=4)[:50000])
+    tree = ast_py.parse(text)
+    print(ast_py.dump(tree, indent=4)[:50000])
     print()
     print(50*"=", "Node Types", 50*"=")
     signatures, all_node_types = _collect_node_signatures(tree)
