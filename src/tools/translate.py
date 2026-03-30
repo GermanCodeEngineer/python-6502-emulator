@@ -1,6 +1,11 @@
+import sys; from pathlib import Path
+sys.path.append(
+    str(Path(__file__).parent.parent)
+)
+
 from __future__ import annotations
 import argparse
-from src.ast_internal import ast_py
+import dcst
 from gceutils import grepr_dataclass
 from pathlib import Path
 import pmp_manip as p
@@ -14,23 +19,23 @@ class TNode:
     attributes: dict[str, Any]
 
     @staticmethod
-    def from_ast_node(node: ast_py.AST | TNode) -> TNode:
+    def from_ast_node(node: dcst.DCST | TNode) -> TNode:
         if isinstance(node, TNode):
             return node
         attrs = {field: getattr(node, field) for field in node._fields}
         for key, value in attrs.items():
-            if isinstance(value, ast_py.AST):
+            if isinstance(value, dcst.DCST):
                 attrs[key] = TNode.from_ast_node(value)
             elif isinstance(value, list):
-                attrs[key] = [TNode.from_ast_node(item) if isinstance(item, ast_py.AST) else item for item in value]
+                attrs[key] = [TNode.from_ast_node(item) if isinstance(item, dcst.DCST) else item for item in value]
         return TNode(
             type=type(node).__name__,
             attributes=attrs,
         )
 
     @staticmethod
-    def try_convert(value: ast_py.AST | TNode | Any) -> TNode | Any:
-        return TNode.from_ast_node(value) if isinstance(value, ast_py.AST) else value
+    def try_convert(value: dcst.DCST | TNode | Any) -> TNode | Any:
+        return TNode.from_ast_node(value) if isinstance(value, dcst.DCST) else value
 
 @grepr_dataclass()
 class InputValue:
@@ -93,12 +98,11 @@ class utils:
         )
 
 
-import ast
-class Translator(ast_py.NodeTransformer):
-    def visit_Expr(self, node: ast.Expr) -> p.SRBlock:
+class Translator(dcst.NodeTransformer):
+    def visit_Expr(self, node: dcst.Expr) -> p.SRBlock:
         return utils.set_var("__VOID__", self.visit(node.value))
 
-    def visit_Module(self, node: ast_py.Module) -> p.SRProject:
+    def visit_Module(self, node: dcst.Module) -> p.SRProject:
         #self.generic_visit(node)
         project = p.SRProject.create_empty()
 
@@ -120,7 +124,7 @@ def translate(filename: Path) -> None:
     p.init_config(cfg)
 
     text = filename.read_text()
-    tree = ast_py.parse(text)
+    tree = dcst.parse(text)
     translator = Translator()
     project: p.SRProject = translator.visit(tree)
     #project.validate(gceutils.AbstractTreePath(), p.info_api)
