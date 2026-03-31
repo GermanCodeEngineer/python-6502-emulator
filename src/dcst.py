@@ -12,7 +12,7 @@ from ast import (
 # External Imports
 import ast as _ast
 from _collections_abc import Buffer
-from gceutils import grepr_dataclass
+from gceutils import grepr_dataclass, field
 from os import PathLike
 from typing import Any, Literal, overload
 from types import EllipsisType
@@ -85,8 +85,8 @@ def unparse(ast_obj: DCST) -> str:
 class _DCSTMeta(type):
     @property # To allow _ast.iter_fields to work on DCST classes
     def _fields(cls) -> tuple[str, ...]:
-        from dataclasses import fields
-        return tuple(field.name for field in fields(cls))
+        from dataclasses import fields as get_fields
+        return tuple(field.name for field in get_fields(cls))
 
 
 @grepr_dataclass()
@@ -127,27 +127,35 @@ class DCST(_ast.AST, metaclass=_DCSTMeta):
     def from_ast_tree[T](ast_tree: DCST | _ast.AST | T | list[DCST | _ast.AST | T]) -> DCST | T | list[DCST | T]:
         if isinstance(ast_tree, DCST):
             return ast_tree
-        
+
         elif isinstance(ast_tree, _ast.AST):
-            dcst_class = globals()[type(ast_tree).__name__]
+            dcst_class: type[DCST] = globals()[type(ast_tree).__name__]
             kwargs = {}
-            for field_name, value in iter_fields(dcst_class):
+            for field_name, value in iter_fields(ast_tree):
                 if isinstance(value, _ast.AST):
                     value = DCST.from_ast_tree(value)
                 elif isinstance(value, list):
                     value = [DCST.from_ast_tree(item) if isinstance(item, _ast.AST) else item for item in value]
                 kwargs[field_name] = value
-            
+
+            for field_name in ["lineno", "col_offset", "end_lineno", "end_col_offset"]:
+                if field_name not in dcst_class._fields:
+                    continue
+                if field_name in kwargs:
+                    continue
+                if hasattr(ast_tree, field_name):
+                    kwargs[field_name] = getattr(ast_tree, field_name)
+
             return dcst_class(**kwargs)
-        
+
         elif isinstance(ast_tree, list):
             return [DCST.from_ast_tree(item) for item in ast_tree]
-        
+
         else:
             return ast_tree
-    
+
     def to_ast_tree(self) -> _ast.AST:
-        ast_class = getattr(_ast, type(self).__name__)
+        ast_class: type[_ast.AST] = getattr(_ast, type(self).__name__)
         kwargs = {}
         for field_name, value in iter_fields(self):
             if isinstance(value, DCST):
@@ -155,7 +163,7 @@ class DCST(_ast.AST, metaclass=_DCSTMeta):
             elif isinstance(value, list):
                 value = [item.to_ast_tree() if isinstance(item, DCST) else item for item in value]
             kwargs[field_name] = value
-        
+
         return ast_class(**kwargs)
 
 
@@ -163,17 +171,17 @@ class DCST(_ast.AST, metaclass=_DCSTMeta):
 class alias(DCST):
     name: str
     asname: str | None
-    lineno: int
-    col_offset: int
-    end_lineno: int | None
-    end_col_offset: int | None
+    lineno: int | None = field(grepr=False)
+    col_offset: int | None = field(grepr=False)
+    end_lineno: int | None = field(grepr=False)
+    end_col_offset: int | None = field(grepr=False)
 
 @grepr_dataclass()
 class arg(DCST):
-    lineno: int
-    col_offset: int
-    end_lineno: int | None
-    end_col_offset: int | None
+    lineno: int | None = field(grepr=False)
+    col_offset: int | None = field(grepr=False)
+    end_lineno: int | None = field(grepr=False)
+    end_col_offset: int | None = field(grepr=False)
     arg: str
     annotation: expr | None
     type_comment: str | None
@@ -205,17 +213,17 @@ class comprehension(DCST):
 
 @grepr_dataclass()
 class excepthandler(DCST):
-    lineno: int
-    col_offset: int
-    end_lineno: int | None
-    end_col_offset: int | None
+    lineno: int | None = field(grepr=False)
+    col_offset: int | None = field(grepr=False)
+    end_lineno: int | None = field(grepr=False)
+    end_col_offset: int | None = field(grepr=False)
 
 @grepr_dataclass()
 class expr(DCST):
-    lineno: int
-    col_offset: int
-    end_lineno: int | None
-    end_col_offset: int | None
+    lineno: int | None = field(grepr=False)
+    col_offset: int | None = field(grepr=False)
+    end_lineno: int | None = field(grepr=False)
+    end_col_offset: int | None = field(grepr=False)
 
 @grepr_dataclass()
 class expr_context(DCST):
@@ -223,10 +231,10 @@ class expr_context(DCST):
 
 @grepr_dataclass()
 class keyword(DCST):
-    lineno: int
-    col_offset: int
-    end_lineno: int | None
-    end_col_offset: int | None
+    lineno: int | None = field(grepr=False)
+    col_offset: int | None = field(grepr=False)
+    end_lineno: int | None = field(grepr=False)
+    end_col_offset: int | None = field(grepr=False)
     arg: str | None
     value: expr
 
@@ -246,17 +254,17 @@ class operator(DCST):
 
 @grepr_dataclass()
 class pattern(DCST):
-    lineno: int
-    col_offset: int
-    end_lineno: int
-    end_col_offset: int
+    lineno: int | None = field(grepr=False)
+    col_offset: int | None = field(grepr=False)
+    end_lineno: int | None = field(grepr=False)
+    end_col_offset: int | None = field(grepr=False)
 
 @grepr_dataclass()
 class stmt(DCST):
-    lineno: int
-    col_offset: int
-    end_lineno: int | None
-    end_col_offset: int | None
+    lineno: int | None = field(grepr=False)
+    col_offset: int | None = field(grepr=False)
+    end_lineno: int | None = field(grepr=False)
+    end_col_offset: int | None = field(grepr=False)
 
 @grepr_dataclass()
 class type_ignore(DCST):
@@ -264,10 +272,10 @@ class type_ignore(DCST):
 
 @grepr_dataclass()
 class type_param(DCST):
-    lineno: int
-    col_offset: int
-    end_lineno: int
-    end_col_offset: int
+    lineno: int | None = field(grepr=False)
+    col_offset: int | None = field(grepr=False)
+    end_lineno: int | None = field(grepr=False)
+    end_col_offset: int | None = field(grepr=False)
 
 @grepr_dataclass()
 class unaryop(DCST):
@@ -740,7 +748,7 @@ class TypeAlias(stmt):
 
 @grepr_dataclass()
 class TypeIgnore(type_ignore):
-    lineno: int
+    lineno: int | None = field(grepr=False)
     tag: str
 
 @grepr_dataclass()
@@ -796,4 +804,6 @@ for name in __all__.copy():
             __all__.remove(name)
     except AttributeError:
         __all__.remove(name)
-print(__all__)
+
+# Make a list of DCST clsasses
+DCST_CLASSES: list[type[DCST]] = [globals()[name] for name in __all__ if isinstance(globals()[name], type) and issubclass(globals()[name], DCST)]

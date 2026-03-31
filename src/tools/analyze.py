@@ -92,7 +92,7 @@ def analyze(filename: Path) -> None:
     text = filename.read_text()
 
     tree = dcst.parse(text)
-    print(dcst.dump(tree, indent=4)[:50000])
+    print(tree)
     print()
     print(50*"=", "Node Types", 50*"=")
     signatures, all_node_types = _collect_node_signatures(tree)
