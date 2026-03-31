@@ -8,8 +8,8 @@ import pmp_manip as p
 class InputValue:
     value: list[p.SRBlock] | p.SRBlock | str | bool | p.SRDropdownValue
 
-    # TODO: add precise typing
-    def as_type(self, input_type: type[p.SRInputValue]) -> p.SRInputValue:
+    # TODO: add copy?
+    def as_type[_T: p.SRInputValue](self, input_type: type[_T]) -> _T:
         blocks = self.value if isinstance(self.value, list) else []
         block = self.value if isinstance(self.value, p.SRBlock) else None
         immediate = self.value if isinstance(self.value, (str, bool)) else (
@@ -37,7 +37,7 @@ class InputValue:
 
     # TODO: remove temporary
     @staticmethod
-    def try_as_type(value: InputValue | Any, input_type: type[p.SRInputValue]) -> p.SRInputValue | Any:
+    def try_as_type[_T: p.SRInputValue](value: InputValue | Any, input_type: type[_T]) -> _T | Any:
         if isinstance(value, InputValue):
             return value.as_type(input_type)
         else:

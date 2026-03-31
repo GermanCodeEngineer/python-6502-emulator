@@ -6,13 +6,12 @@ from __future__ import annotations; del annotations
 from ast import (
     copy_location, fix_missing_locations, iter_fields, iter_child_nodes,
     get_source_segment, walk, compare,
-    NodeVisitor,
 )
 
 # External Imports
 import ast as _ast
 from _collections_abc import Buffer
-from gceutils import grepr_dataclass, field
+from gceutils import grepr_dataclass, field, AbstractTreePath
 from os import PathLike
 from typing import Any, Literal, overload
 from types import EllipsisType
@@ -72,9 +71,56 @@ def get_docstring(node: AsyncFunctionDef | FunctionDef | ClassDef | Module, clea
 get_source_segment # get_source_segment is reused
 walk # walk is reused
 compare # compare is reused
-NodeVisitor # NodeVisitor is reused
 
+@grepr_dataclass()
+class NodeVisitor(object):
+    """
+    A node visitor base class that walks the dataclass syntax tree and calls a
+    visitor function for every node found.  This function may return a value
+    which is forwarded by the `visit` method.
 
+    This class is meant to be subclassed, with the subclass adding visitor
+    methods.
+
+    Per default the visitor functions for the nodes are ``'visit_'`` +
+    class name of the node.  So a `TryFinally` node visit function would
+    be `visit_TryFinally`.  This behavior can be changed by overriding
+    the `visit` method.  If no visitor function exists for a node
+    (return value `None`) the `generic_visit` visitor is used instead.
+
+    Don't use the `NodeVisitor` if you want to apply changes to nodes during
+    traversing.  For this a special visitor exists (`NodeTransformer`) that
+    allows modifications.
+    """
+    root_node: DCST | None = field(default=None, init=False)
+
+    def set_root_and_visit(self, node: DCST) -> DCST | Any:
+        self.root_node = node
+        return self.visit(node, AbstractTreePath())
+
+    def visit(self, node: DCST | Any, path_to_node: AbstractTreePath = AbstractTreePath()) -> DCST | Any:
+        """Visit a node."""
+        method = 'visit_' + node.__class__.__name__
+        visitor = getattr(self, method, self.generic_visit)
+        return visitor(node, path_to_node)
+
+    def generic_visit(self, node: DCST | Any, path_to_node: AbstractTreePath) -> None:
+        """Called if no explicit visitor function exists for a node."""
+        for field, value in iter_fields(node):
+            attribute_path = path_to_node.add_attribute(field)
+            if isinstance(value, list):
+                for i, item in enumerate(value):
+                    if isinstance(item, DCST):
+                        self.visit(item, attribute_path.add_index_or_key(i))
+            elif isinstance(value, DCST):
+                self.visit(value, attribute_path)
+
+    def get_path(self, path_to_node: AbstractTreePath) -> DCST | Any:
+        if self.root_node is None:
+            raise ValueError("Root node is not set. Call set_root_and_visit first.")
+        return path_to_node.get_in_tree(self.root_node)
+
+@grepr_dataclass()
 class NodeTransformer(NodeVisitor):
     """
     A :class:`NodeVisitor` subclass that walks the abstract syntax tree and
@@ -108,16 +154,17 @@ class NodeTransformer(NodeVisitor):
 
     Usually you use the transformer like this::
 
-       node = YourTransformer().visit(node)
+       node = YourTransformer().visit(node, AbstractTreePath())
     """
 
-    def generic_visit(self, node: DCST) -> DCST | Any:
+    def generic_visit(self, node: DCST, path_to_node: AbstractTreePath = AbstractTreePath()) -> DCST | Any:
         for field, old_value in iter_fields(node):
+            attribute_path = path_to_node.add_attribute(field)
             if isinstance(old_value, list):
                 new_values = []
-                for value in old_value:
+                for i, value in enumerate(old_value):
                     if isinstance(value, DCST):
-                        value = self.visit(value)
+                        value = self.visit(value, attribute_path.add_index_or_key(i))
                         if value is None:
                             pass
                         elif isinstance(value, list):
@@ -128,12 +175,17 @@ class NodeTransformer(NodeVisitor):
                         new_values.append(value)
                 old_value[:] = new_values
             elif isinstance(old_value, DCST):
-                new_node = self.visit(old_value)
+                new_node = self.visit(old_value, attribute_path)
                 if new_node is None:
                     delattr(node, field)
                 else:
                     setattr(node, field, new_node)
         return node
+
+    def set_path(self, path_to_node: AbstractTreePath, value: DCST | Any) -> None:
+        if self.root_node is None:
+            raise ValueError("Root node is not set. Call set_root_and_visit first.")
+        path_to_node.set_in_tree(self.root_node, value)
 
 def unparse(ast_obj: DCST) -> str:
     return _ast.unparse(ast_obj.to_ast_tree())
@@ -798,7 +850,7 @@ class Try(stmt):
 class Tuple(expr):
     elts: list[expr]
     ctx: expr_context
-    dims: list[expr]
+    dims: list[expr] = field(default_factory=list)
 
 @grepr_dataclass()
 class TypeAlias(stmt):
@@ -855,6 +907,14 @@ class Yield(expr):
 class YieldFrom(expr):
     value: expr
 
+#================================================================================================================#
+#                                                    Variables                                                   #
+#================================================================================================================#
+
+# Relevant groups of nodes
+SCOPE_PROVIDING_CLASSES: list[type[DCST]] = [Module, FunctionDef, AsyncFunctionDef, ClassDef, Lambda, ListComp, SetComp, DictComp, GeneratorExp]
+SUBDEFINITION_ALLOWING_CLASSES: list[type[DCST]] = [Module, FunctionDef, AsyncFunctionDef, ClassDef]
+
 # Create a proper __all__
 __all__ = list(globals().keys())
 for name in __all__.copy():
@@ -867,3 +927,4 @@ for name in __all__.copy():
 
 # Make a list of DCST clsasses
 DCST_CLASSES: list[type[DCST]] = [globals()[name] for name in __all__ if isinstance(globals()[name], type) and issubclass(globals()[name], DCST)]
+__all__.append("DCST_CLASSES")
