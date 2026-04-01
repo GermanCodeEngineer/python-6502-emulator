@@ -34,10 +34,56 @@ class RestrictedTranslator(dcst.NodeTransformer):
             #substack=InputValue([item for item in node.body if isinstance(item, p.SRBlock)]),
         )
 
+    def visit_Compare(self, node: dcst.Compare, path: AbstractTreePath) -> p.SRBlock:
+        self.generic_visit(node, path)
+        if len(node.ops) > 1:
+            raise NotImplementedError("Chained comparisons are not supported yet.")
+            # This implementation reevalates the middle expression multiple times, which is not ideal.
+            line_numbers_etc = dcst.get_code_reference_fields(node)
+            new_node = dcst.BoolOp(
+                op=dcst.And(),
+                values=[
+                    dcst.Compare(
+                        left=node.left,
+                        ops=node.ops[:1],
+                        comparators=[node.comparators[0]],
+                        **line_numbers_etc,
+                    ),
+                    dcst.Compare(
+                        left=node.comparators[0],
+                        ops=node.ops[1:],
+                        comparators=node.comparators[1:],
+                        **line_numbers_etc,
+                    ),
+                ],
+                **line_numbers_etc,
+            )
+            return self.visit(new_node, path)
+
+        left = node.left
+        right = node.comparators[0]
+
+        match type(node.ops[0]):
+            case dcst.Eq: return utils.operator_equals(left, right)
+            case dcst.Gt: return utils.operator_gt(left, right)
+            case dcst.GtE: return utils.operator_gte(left, right)
+            case dcst.In: return utils.operator_contains(left, right)
+            case dcst.Is: return utils.is_block(left, right)
+            case dcst.IsNot: return utils.operator_not(utils.is_block(left, right))
+            case dcst.Lt: return utils.operator_lt(left, right)
+            case dcst.LtE: return utils.operator_lte(left, right)
+            case dcst.NotEq: return utils.operator_notequal(left, right)
+            case dcst.NotIn: return utils.operator_not(utils.operator_contains(left, right))
+
+        print(node)
+        raise NotImplementedError(f"Comparison operator {type(node.ops[0])} is not supported yet.")
+
     def visit_Constant(self, node: dcst.Constant, path: AbstractTreePath) -> InputValue:
         self.generic_visit(node, path)
         if isinstance(node.value, (str, bool)):
             return InputValue(node.value)
+        elif node.value is None:
+            return InputValue(utils.nothing())
         else:
             return node
 
@@ -54,6 +100,28 @@ class RestrictedTranslator(dcst.NodeTransformer):
             return utils.define_instance_method(name, substack)
         else:
             return utils.create_function_at(name, substack)
+
+    def visit_If(self, node: dcst.If, path: AbstractTreePath) -> p.SRBlock:
+        self.generic_visit(node, path)
+        return utils.if_else_block(
+            condition=node.test,
+            if_substack=InputValue(node.body),
+            else_substack=InputValue(node.orelse),
+        )
+
+    def visit_BoolOp(self, node: dcst.BoolOp, path: AbstractTreePath) -> InputValue:
+        self.generic_visit(node, path)
+
+        # Start with the first value (already visited/transformed)
+        result = node.values[0]
+        for val in node.values[1:]:
+            match type(node.op):
+                case dcst.And:
+                    result = InputValue(utils.operator_and(result, val))
+                case dcst.Or:
+                    result = InputValue(utils.operator_or(result, val))
+
+        return result
 
     def visit_Module(self, node: dcst.Module, path: AbstractTreePath) -> p.SRProject:
         project = p.SRProject.create_empty()
@@ -77,19 +145,11 @@ class RestrictedTranslator(dcst.NodeTransformer):
         project.add_all_extensions_to_info_api(p.info_api)
         return project
 
+    def visit_Name(self, node: dcst.Name, path: AbstractTreePath) -> InputValue:
+        self.generic_visit(node, path)
+        # TODO # Temporarily just return the variable name
+        return InputValue(node.id)
 
-class TemporaryCleaner(dcst.NodeTransformer):
-    def generic_visit(self, node: dcst.DCST | Any, path: AbstractTreePath) -> Any:
-        for field, old_value in dcst.iter_fields(node):
-            if isinstance(old_value, list):
-                new_values = []
-                for value in old_value:
-                    if not isinstance(value, dcst.DCST):
-                        new_values.append(value)
-                old_value[:] = new_values
-            elif isinstance(old_value, dcst.DCST):
-                delattr(node, field)
-        return node
 
 def translate(filename: Path) -> None:
     cfg = p.get_default_config()

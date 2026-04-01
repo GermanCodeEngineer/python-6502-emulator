@@ -57,6 +57,15 @@ fix_missing_locations # fix_missing_locations is reused
 iter_fields # iter_fields is reused
 iter_child_nodes # iter_child_nodes is reused
 
+# Added onto ast: get_code_reference_fields
+def get_code_reference_fields(node: DCST) -> dict[str, int]:
+    """Return a dict containing the fields of the node that are used for code references."""
+    d = {}
+    for attribute in ["lineno", "col_offset", "end_lineno", "end_col_offset"]:
+        if hasattr(node, attribute):
+            d[attribute] = getattr(node, attribute)
+    return d
+
 def get_docstring(node: AsyncFunctionDef | FunctionDef | ClassDef | Module, clean: bool = True):
     """
     Return the docstring for the given node or None if no docstring can

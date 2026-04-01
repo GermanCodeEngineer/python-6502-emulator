@@ -35,7 +35,7 @@ class Memory(object):
         :rtype: int
         :raises ValueError: Memory address is not valid
         """
-        if 0x0000 < address > self.size:
+        if (address < 0x0000) or (address >= self.size):
             raise ValueError("Memory address is not valid")
         return self.memory[address]
 
@@ -50,7 +50,7 @@ class Memory(object):
         :raises ValueError: Memory address is not valid
         :raises ValueError: Size of value exceed byte size
         """
-        if 0x0000 < address > self.size:
+        if (address < 0x0000) or (address >= self.size):
             raise ValueError("Memory address is not valid")
         if value.bit_length() > 8:
             raise ValueError("Value too large")

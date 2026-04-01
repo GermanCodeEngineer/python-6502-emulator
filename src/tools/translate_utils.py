@@ -8,30 +8,46 @@ import pmp_manip as p
 class InputValue:
     value: list[p.SRBlock] | p.SRBlock | str | bool | p.SRDropdownValue
 
+    def __post_init__(self) -> None:
+        if isinstance(self.value, InputValue):
+            raise ValueError("InputValue cannot contain another InputValue. Got: " + repr(self.value))
+
+
     # TODO: add copy?
     def as_type[_T: p.SRInputValue](self, input_type: type[_T]) -> _T:
-        blocks = self.value if isinstance(self.value, list) else []
-        block = self.value if isinstance(self.value, p.SRBlock) else None
-        immediate = self.value if isinstance(self.value, (str, bool)) else (
-            "" if input_type is p.SRBlockAndTextInputValue
-            else False if input_type is p.SRBlockAndBoolInputValue
-            else None
-        )
-        dropdown = self.value if isinstance(self.value, p.SRDropdownValue) else None
-
         match input_type:
             case p.SRBlockAndTextInputValue:
-                return p.SRBlockAndTextInputValue(block=block, immediate=immediate)
+                if isinstance(self.value, p.SRBlock):
+                    return input_type(block=self.value, immediate="")
+                elif isinstance(self.value, str):
+                    return input_type(block=None, immediate=self.value)
+                else: raise ValueError(self.value, type(self.value))
+
             case p.SRBlockAndDropdownInputValue:
-                return p.SRBlockAndDropdownInputValue(block=block, dropdown=dropdown)
+                if isinstance(self.value, p.SRBlock):
+                    return input_type(block=self.value, dropdown=None)
+                elif isinstance(self.value, p.SRDropdownValue):
+                    return input_type(block=None, dropdown=self.value)
+                else: raise ValueError(self.value)
+
             case p.SRBlockAndBoolInputValue:
-                return p.SRBlockAndBoolInputValue(block=block, immediate=immediate)
-            case p.SRBlockOnlyInputValue:
-                return p.SRBlockOnlyInputValue(block=block)
+                if isinstance(self.value, p.SRBlock):
+                    return input_type(block=self.value, immediate=False)
+                elif isinstance(self.value, bool):
+                    return input_type(block=None, immediate=self.value)
+                else: raise ValueError(self.value)
+
+            case p.SRBlockOnlyInputValue | p.SREmbeddedBlockInputValue:
+                if isinstance(self.value, p.SRBlock):
+                    return input_type(block=self.value)
+                else: raise ValueError(self.value)
+
             case p.SRScriptInputValue:
-                return p.SRScriptInputValue(blocks=blocks)
-            case p.SREmbeddedBlockInputValue:
-                return p.SREmbeddedBlockInputValue(block=block)
+                if isinstance(self.value, list):
+                    # and all(isinstance(item, p.SRBlock) for item in self.value)
+                    return input_type(blocks=self.value)
+                else: raise ValueError(self.value)
+
             case _:
                 raise ValueError()
 
@@ -39,8 +55,10 @@ class InputValue:
     @staticmethod
     def try_as_type[_T: p.SRInputValue](value: InputValue | Any, input_type: type[_T]) -> _T | Any:
         if isinstance(value, InputValue):
+            print("try_as_type", repr(value)[:100], "as", repr(value.as_type(input_type))[:100])
             return value.as_type(input_type)
         else:
+            print("try_as_type", repr(value)[:100], "(no conversion)")
             return value
 
 
@@ -62,6 +80,17 @@ class utils:
             opcode="&variables::set [VARIABLE] to (VALUE)",
             inputs={"VALUE": InputValue.try_as_type(value, p.SRBlockAndTextInputValue)},
             dropdowns={"VARIABLE": utils.var_dd(name)}
+        )
+
+    @staticmethod
+    def if_else_block(condition: InputValue, if_substack: InputValue, else_substack: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&control::if (CONDITION) {THEN} else {ELSE}",
+            inputs={
+                "CONDITION": InputValue.try_as_type(condition, p.SRBlockAndTextInputValue),
+                "THEN": InputValue.try_as_type(if_substack, p.SRScriptInputValue),
+                "ELSE": InputValue.try_as_type(else_substack, p.SRScriptInputValue),
+            },
         )
 
     # Helper for standard dropdown values
@@ -375,6 +404,129 @@ class utils:
             },
         )
 
+    # ---------------------- Operators / Comparisons ----------------------
+    @staticmethod
+    def operator_gt(a: InputValue, b: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::(OPERAND1) > (OPERAND2)",
+            inputs={
+                "OPERAND1": InputValue.try_as_type(a, p.SRBlockAndTextInputValue),
+                "OPERAND2": InputValue.try_as_type(b, p.SRBlockAndTextInputValue),
+            },
+        )
+
+    @staticmethod
+    def operator_gte(a: InputValue, b: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::(OPERAND1) >= (OPERAND2)",
+            inputs={
+                "OPERAND1": InputValue.try_as_type(a, p.SRBlockAndTextInputValue),
+                "OPERAND2": InputValue.try_as_type(b, p.SRBlockAndTextInputValue),
+            },
+        )
+
+    @staticmethod
+    def operator_lt(a: InputValue, b: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::(OPERAND1) < (OPERAND2)",
+            inputs={
+                "OPERAND1": InputValue.try_as_type(a, p.SRBlockAndTextInputValue),
+                "OPERAND2": InputValue.try_as_type(b, p.SRBlockAndTextInputValue),
+            },
+        )
+
+    @staticmethod
+    def operator_lte(a: InputValue, b: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::(OPERAND1) <= (OPERAND2)",
+            inputs={
+                "OPERAND1": InputValue.try_as_type(a, p.SRBlockAndTextInputValue),
+                "OPERAND2": InputValue.try_as_type(b, p.SRBlockAndTextInputValue),
+            },
+        )
+
+    @staticmethod
+    def operator_equals(a: InputValue, b: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::(OPERAND1) = (OPERAND2)",
+            inputs={
+                "OPERAND1": InputValue.try_as_type(a, p.SRBlockAndTextInputValue),
+                "OPERAND2": InputValue.try_as_type(b, p.SRBlockAndTextInputValue),
+            },
+        )
+
+    @staticmethod
+    def operator_notequal(a: InputValue, b: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::(OPERAND1) != (OPERAND2)",
+            inputs={
+                "OPERAND1": InputValue.try_as_type(a, p.SRBlockAndTextInputValue),
+                "OPERAND2": InputValue.try_as_type(b, p.SRBlockAndTextInputValue),
+            },
+        )
+
+    @staticmethod
+    def operator_contains(text: InputValue, substring: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::(TEXT) contains (SUBSTRING) ?",
+            inputs={
+                "TEXT": InputValue.try_as_type(text, p.SRBlockAndTextInputValue),
+                "SUBSTRING": InputValue.try_as_type(substring, p.SRBlockAndTextInputValue),
+            },
+        )
+
+    @staticmethod
+    def operator_and(a: InputValue, b: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::<OPERAND1> and <OPERAND2>",
+            inputs={
+                "OPERAND1": InputValue.try_as_type(a, p.SRBlockAndBoolInputValue),
+                "OPERAND2": InputValue.try_as_type(b, p.SRBlockAndBoolInputValue),
+            },
+        )
+
+    @staticmethod
+    def operator_or(a: InputValue, b: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::<OPERAND1> or <OPERAND2>",
+            inputs={
+                "OPERAND1": InputValue.try_as_type(a, p.SRBlockAndBoolInputValue),
+                "OPERAND2": InputValue.try_as_type(b, p.SRBlockAndBoolInputValue),
+            },
+        )
+
+    @staticmethod
+    def operator_not(operand: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::not <OPERAND>",
+            inputs={"OPERAND": InputValue.try_as_type(operand, p.SRBlockAndBoolInputValue)},
+        )
+
+    @staticmethod
+    def operator_true() -> p.SRBlock:
+        return p.SRBlock(opcode="&operators::true")
+
+    @staticmethod
+    def operator_false() -> p.SRBlock:
+        return p.SRBlock(opcode="&operators::false")
+
+    # ---------------------- Boolify / Stringify ----------------------
+    @staticmethod
+    def operator_stringify(value: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::(VALUE)",
+            inputs={"VALUE": InputValue.try_as_type(value, p.SRBlockAndTextInputValue)},
+        )
+
+    @staticmethod
+    def operator_boolify(value: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::(VALUE) as a boolean",
+            inputs={"VALUE": InputValue.try_as_type(value, p.SRBlockAndTextInputValue)},
+        )
+
+    # ---------------------- Introspection ----------------------
+
     @staticmethod
     def get_all_attributes(instance: InputValue) -> p.SRBlock:
         return p.SRBlock(
@@ -426,23 +578,23 @@ class utils:
         )
 
     @staticmethod
-    def create_function_at(name: InputValue, shadow: InputValue | None = None, substack: InputValue | None = None) -> p.SRBlock:
+    def create_function_at(name: InputValue, substack: InputValue | None = None) -> p.SRBlock:
         return p.SRBlock(
             opcode="&gceClassesOOP::create function at (NAME) {:SHADOW:} {SUBSTACK}",
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(shadow if shadow is not None else utils.all_function_args(), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(utils.all_function_args(), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
 
     @staticmethod
-    def create_function_named(name: InputValue, shadow: InputValue | None = None, substack: InputValue | None = None) -> p.SRBlock:
+    def create_function_named(name: InputValue, substack: InputValue | None = None) -> p.SRBlock:
         return p.SRBlock(
             opcode="&gceClassesOOP::create function named (NAME) {:SHADOW:} {SUBSTACK}",
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(shadow if shadow is not None else utils.all_function_args(), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(utils.all_function_args(), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
@@ -524,7 +676,7 @@ class utils:
         )
 
     @staticmethod
-    def check_identity(v1: InputValue, v2: InputValue) -> p.SRBlock:
+    def is_block(v1: InputValue, v2: InputValue) -> p.SRBlock:
         return p.SRBlock(
             opcode="&gceClassesOOP::(VALUE1) is (VALUE2) ?",
             inputs={
