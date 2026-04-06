@@ -25,6 +25,15 @@ class RestrictedTranslator(dcst.NodeTransformer):
             current_path = current_path.go_up(1)
         return None
 
+    def visit_Assign(self, node: dcst.Assign, path: AbstractTreePath) -> p.SRBlock:
+        self.generic_visit(node, path)
+        if len(node.targets) > 1:
+            raise NotImplementedError("Multiple assignment is not supported yet.")
+        return utils.set_var(
+            name=node.targets[0],
+            value=node.value,
+        )
+
     def visit_ClassDef(self, node: dcst.ClassDef, path: AbstractTreePath) -> p.SRBlock:
         self.generic_visit(node, path)
         #ancestor = self.get_ancestor_of_types(path, dcst.SUBDEFINITION_ALLOWING_CLASSES)
@@ -38,7 +47,7 @@ class RestrictedTranslator(dcst.NodeTransformer):
         self.generic_visit(node, path)
         if len(node.ops) > 1:
             raise NotImplementedError("Chained comparisons are not supported yet.")
-            # This implementation reevalates the middle expression multiple times, which is not ideal.
+            # This implementation reevaluates the middle expression multiple times, which is not ideal.
             line_numbers_etc = dcst.get_code_reference_fields(node)
             new_node = dcst.BoolOp(
                 op=dcst.And(),

@@ -253,6 +253,8 @@ class DCST(_ast.AST, metaclass=_DCSTMeta):
             dcst_class: type[DCST] = globals()[type(ast_tree).__name__]
             kwargs = {}
             for field_name, value in iter_fields(ast_tree):
+                if isinstance(value, _ast.Tuple) and (field_name == "dims"):
+                    continue # I removed the deprecated dims field
                 if isinstance(value, _ast.AST):
                     value = DCST.from_ast_tree(value)
                 elif isinstance(value, list):
@@ -859,7 +861,7 @@ class Try(stmt):
 class Tuple(expr):
     elts: list[expr]
     ctx: expr_context
-    dims: list[expr] = field(default_factory=list)
+    # I removed the deprecated dims field
 
 @grepr_dataclass()
 class TypeAlias(stmt):

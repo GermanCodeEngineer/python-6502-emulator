@@ -21,6 +21,8 @@ class InputValue:
                     return input_type(block=self.value, immediate="")
                 elif isinstance(self.value, str):
                     return input_type(block=None, immediate=self.value)
+                elif isinstance(self.value, bool):
+                    return input_type(block=utils.boolean_block(self.value), immediate="")
                 else: raise ValueError(self.value, type(self.value))
 
             case p.SRBlockAndDropdownInputValue:
@@ -64,25 +66,6 @@ class InputValue:
 
 class utils:
     @staticmethod
-    def var_dd(name: str) -> p.SRDropdownValue:
-        return p.SRDropdownValue(p.DropdownValueKind.VARIABLE, name)
-
-    @staticmethod
-    def var(name: str) -> p.SRBlock:
-        return p.SRBlock(
-            opcode="&variables::value of [VARIABLE]",
-            dropdowns={"VARIABLE": utils.var_dd(name)}
-        )
-
-    @staticmethod
-    def set_var(name: str, value: InputValue) -> p.SRBlock:
-        return p.SRBlock(
-            opcode="&variables::set [VARIABLE] to (VALUE)",
-            inputs={"VALUE": InputValue.try_as_type(value, p.SRBlockAndTextInputValue)},
-            dropdowns={"VARIABLE": utils.var_dd(name)}
-        )
-
-    @staticmethod
     def if_else_block(condition: InputValue, if_substack: InputValue, else_substack: InputValue) -> p.SRBlock:
         return p.SRBlock(
             opcode="&control::if (CONDITION) {THEN} else {ELSE}",
@@ -91,6 +74,12 @@ class utils:
                 "THEN": InputValue.try_as_type(if_substack, p.SRScriptInputValue),
                 "ELSE": InputValue.try_as_type(else_substack, p.SRScriptInputValue),
             },
+        )
+
+    @staticmethod
+    def boolean_block(value: bool) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&operators::true" if value else "&operators::false",
         )
 
     # Helper for standard dropdown values
@@ -127,7 +116,7 @@ class utils:
         return p.SRBlock(opcode="&gceClassesOOP::logStacks")
 
     @staticmethod
-    def set_scope_var(name: InputValue, value: InputValue) -> p.SRBlock:
+    def set_var(name: InputValue, value: InputValue) -> p.SRBlock:
         return p.SRBlock(
             opcode="&gceClassesOOP::set var (NAME) to (VALUE) in current scope",
             inputs={
@@ -137,7 +126,7 @@ class utils:
         )
 
     @staticmethod
-    def get_scope_var(name: InputValue) -> p.SRBlock:
+    def get_var(name: InputValue) -> p.SRBlock:
         return p.SRBlock(
             opcode="&gceClassesOOP::get var (NAME)",
             inputs={"NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue)},
@@ -278,8 +267,8 @@ class utils:
     @staticmethod
     def define_instance_method(name: InputValue, substack: InputValue | None = None) -> p.SRBlock:
         return p.SRBlock(
-            inputs={
             opcode="&gceClassesOOP::define instance method (NAME) {:SHADOW:} {SUBSTACK}",
+            inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
                 "SHADOW": InputValue.try_as_type(InputValue(utils.self_block()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
