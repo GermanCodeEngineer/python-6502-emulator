@@ -295,11 +295,11 @@ extension = OpcodeInfoGroup(
             new_mutation_cls=None,
             allow_embedded=False,
         ),
-        ("gceClassesOOP_defineInstanceMethod", "&gceClassesOOP::define instance method (NAME) {:SHADOW1:} {SUBSTACK}"): OpcodeInfo(
+        ("gceClassesOOP_defineInstanceMethod", "&gceClassesOOP::define instance method (NAME) {:SHADOW:} {SUBSTACK}"): OpcodeInfo(
             opcode_type=OpcodeType.STATEMENT,
             inputs=DualKeyDict({
                 ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-                ("SHADOW1", "SHADOW1"): InputInfo(type=ExtensionInputType.S_gceClassesOOP_self, menu=None),
+                ("SHADOW", "SHADOW"): InputInfo(type=ExtensionInputType.S_gceClassesOOP_self, menu=None),
                 ("SUBSTACK", "SUBSTACK"): InputInfo(type=BuiltinInputType.SCRIPT, menu=None),
             }),
             dropdowns=DualKeyDict(),
@@ -312,10 +312,10 @@ extension = OpcodeInfoGroup(
             new_mutation_cls=None,
             allow_embedded=False,
         ),
-        ("gceClassesOOP_defineSpecialMethod", "&gceClassesOOP::define [SPECIAL_METHOD] method {:SHADOW1:} {SUBSTACK}"): OpcodeInfo(
+        ("gceClassesOOP_defineSpecialMethod", "&gceClassesOOP::define [SPECIAL_METHOD] method {:SHADOW:} {SUBSTACK}"): OpcodeInfo(
             opcode_type=OpcodeType.STATEMENT,
             inputs=DualKeyDict({
-                ("SHADOW1", "SHADOW1"): InputInfo(type=ExtensionInputType.S_gceClassesOOP_self, menu=None),
+                ("SHADOW", "SHADOW"): InputInfo(type=ExtensionInputType.S_gceClassesOOP_self, menu=None),
                 ("SUBSTACK", "SUBSTACK"): InputInfo(type=BuiltinInputType.SCRIPT, menu=None),
             }),
             dropdowns=DualKeyDict({

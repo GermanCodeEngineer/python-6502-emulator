@@ -102,7 +102,7 @@ class utils:
     @staticmethod
     def create_class_at(name: InputValue, substack: InputValue | None = None) -> p.SRBlock:
         return p.SRBlock(
-            opcode="&gceClassesOOP::create class at (NAME) {:SHADOW:} {SUBSTACK}",
+            opcode="&gceClassesOOP::create class at var (NAME) {:SHADOW:} {SUBSTACK}",
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
                 "SHADOW": InputValue.try_as_type(InputValue(utils.class_being_created()), p.SREmbeddedBlockInputValue),
@@ -113,13 +113,71 @@ class utils:
     @staticmethod
     def create_subclass_at(name: InputValue, superclass: InputValue, substack: InputValue | None = None) -> p.SRBlock:
         return p.SRBlock(
-            opcode="&gceClassesOOP::create subclass at (NAME) with superclass (SUPERCLASS) {:SHADOW:} {SUBSTACK}",
+            opcode="&gceClassesOOP::create subclass at var (NAME) with superclass (SUPERCLASS) {:SHADOW:} {SUBSTACK}",
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
                 "SUPERCLASS": InputValue.try_as_type(superclass, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(InputValue(utils.nothing()), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(InputValue(utils.class_being_created()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
+        )
+
+    @staticmethod
+    def log_stacks() -> p.SRBlock:
+        return p.SRBlock(opcode="&gceClassesOOP::logStacks")
+
+    @staticmethod
+    def set_scope_var(name: InputValue, value: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&gceClassesOOP::set var (NAME) to (VALUE) in current scope",
+            inputs={
+                "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
+                "VALUE": InputValue.try_as_type(value, p.SRBlockAndTextInputValue),
+            },
+        )
+
+    @staticmethod
+    def get_scope_var(name: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&gceClassesOOP::get var (NAME)",
+            inputs={"NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue)},
+        )
+
+    @staticmethod
+    def has_scope_var(name: InputValue, kind: str) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&gceClassesOOP::var (NAME) exists in [KIND]?",
+            inputs={"NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue)},
+            dropdowns={"KIND": utils.dd_variableAvailableKind(kind)},
+        )
+
+    @staticmethod
+    def delete_scope_var(name: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&gceClassesOOP::delete var (NAME) in current scope",
+            inputs={"NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue)},
+        )
+
+    @staticmethod
+    def all_variables(kind: str) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&gceClassesOOP::all variables in [KIND]",
+            dropdowns={"KIND": utils.dd_variableAvailableKind(kind)},
+        )
+
+    @staticmethod
+    def create_var_scope(substack: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&gceClassesOOP::create local variable scope {SUBSTACK}",
+            inputs={"SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue)},
+        )
+
+    @staticmethod
+    def bind_var_to_scope(kind: str, name: InputValue) -> p.SRBlock:
+        return p.SRBlock(
+            opcode="&gceClassesOOP::bind [KIND] variable (NAME) to current scope",
+            inputs={"NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue)},
+            dropdowns={"KIND": utils.dd_bindVarOriginKind(kind)},
         )
 
     @staticmethod
@@ -220,11 +278,10 @@ class utils:
     @staticmethod
     def define_instance_method(name: InputValue, substack: InputValue | None = None) -> p.SRBlock:
         return p.SRBlock(
-            opcode="&gceClassesOOP::define instance method (NAME) {:SHADOW1:} {:SHADOW2:} {SUBSTACK}",
             inputs={
+            opcode="&gceClassesOOP::define instance method (NAME) {:SHADOW:} {SUBSTACK}",
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
-                "SHADOW1": InputValue.try_as_type(InputValue(utils.self_block()), p.SREmbeddedBlockInputValue),
-                "SHADOW2": InputValue.try_as_type(InputValue(utils.all_function_args()), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(InputValue(utils.self_block()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
@@ -232,13 +289,12 @@ class utils:
     @staticmethod
     def define_special_method(special: str, substack: InputValue | None = None) -> p.SRBlock:
         return p.SRBlock(
-            opcode="&gceClassesOOP::define [SPECIAL_METHOD] method {:SHADOW1:} {:SHADOW2:} {SUBSTACK}",
+            opcode="&gceClassesOOP::define [SPECIAL_METHOD] method {:SHADOW:} {SUBSTACK}",
             inputs={
-                "SHADOW1": InputValue.try_as_type(InputValue(utils.self_block()), p.SREmbeddedBlockInputValue),
-                "SHADOW2": InputValue.try_as_type(InputValue(utils.all_function_args()), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(InputValue(utils.self_block()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
-            dropdowns={"SPECIAL_METHOD": utils.dd_standard(special)},
+            dropdowns={"SPECIAL_METHOD": utils.dd_specialMethod(special)},
         )
 
     @staticmethod
@@ -297,7 +353,7 @@ class utils:
                 "SHADOW": InputValue.try_as_type(InputValue(utils.operator_other_value()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
-            dropdowns={"OPERATOR_KIND": utils.dd_standard(operator_kind)},
+            dropdowns={"OPERATOR_KIND": utils.dd_operatorMethod(operator_kind)},
         )
 
     @staticmethod
@@ -339,10 +395,9 @@ class utils:
     @staticmethod
     def define_static_method(name: InputValue, substack: InputValue | None = None) -> p.SRBlock:
         return p.SRBlock(
-            opcode="&gceClassesOOP::define static method (NAME) {:SHADOW:} {SUBSTACK}",
+            opcode="&gceClassesOOP::define static method (NAME) {SUBSTACK}",
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(InputValue(utils.all_function_args()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
@@ -352,7 +407,7 @@ class utils:
         return p.SRBlock(
             opcode="&gceClassesOOP::[PROPERTY] names of class (CLASS)",
             inputs={"CLASS": InputValue.try_as_type(class_name, p.SRBlockAndTextInputValue)},
-            dropdowns={"PROPERTY": utils.dd_standard(property_name)},
+            dropdowns={"PROPERTY": utils.dd_classProperty(property_name)},
         )
 
     # ---------------------- Instances / attributes ----------------------
@@ -580,10 +635,9 @@ class utils:
     @staticmethod
     def create_function_at(name: InputValue, substack: InputValue | None = None) -> p.SRBlock:
         return p.SRBlock(
-            opcode="&gceClassesOOP::create function at (NAME) {:SHADOW:} {SUBSTACK}",
+            opcode="&gceClassesOOP::create function at var (NAME) {SUBSTACK}",
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(utils.all_function_args(), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
@@ -591,10 +645,9 @@ class utils:
     @staticmethod
     def create_function_named(name: InputValue, substack: InputValue | None = None) -> p.SRBlock:
         return p.SRBlock(
-            opcode="&gceClassesOOP::create function named (NAME) {:SHADOW:} {SUBSTACK}",
+            opcode="&gceClassesOOP::create function named (NAME) {SUBSTACK}",
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(utils.all_function_args(), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
