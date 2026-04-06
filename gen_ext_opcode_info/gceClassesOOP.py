@@ -1,6 +1,18 @@
 from pmp_manip.opcode_info.data_imports import *
 
 class ExtensionDropdownType(DropdownType):
+    variableAvailableKind = DropdownTypeInfo(
+        direct_values=['all scopes', 'local scope', 'global scope'],
+        rules=[],
+        old_direct_values=['all scopes', 'local scope', 'global scope'],
+        fallback=None,
+    )
+    bindVarOriginKind = DropdownTypeInfo(
+        direct_values=['non-local', 'global'],
+        rules=[],
+        old_direct_values=['non-local', 'global'],
+        fallback=None,
+    )
     classProperty = DropdownTypeInfo(
         direct_values=['instance method', 'static method', 'getter method', 'setter method', 'operator method', 'class variable'],
         rules=[],
@@ -23,14 +35,136 @@ class ExtensionDropdownType(DropdownType):
 class ExtensionInputType(InputType):
     S_gceClassesOOP_classBeingCreated = (InputMode.FORCED_EMBEDDED_BLOCK, 'gceClassesOOP_classBeingCreated', None, -1)
     S_gceClassesOOP_self = (InputMode.FORCED_EMBEDDED_BLOCK, 'gceClassesOOP_self', None, -1)
-    S_gceClassesOOP_allFunctionArgs = (InputMode.FORCED_EMBEDDED_BLOCK, 'gceClassesOOP_allFunctionArgs', None, -1)
     S_gceClassesOOP_defineSetterValue = (InputMode.FORCED_EMBEDDED_BLOCK, 'gceClassesOOP_defineSetterValue', None, -1)
     S_gceClassesOOP_operatorOtherValue = (InputMode.FORCED_EMBEDDED_BLOCK, 'gceClassesOOP_operatorOtherValue', None, -1)
 
 extension = OpcodeInfoGroup(
     name="gceClassesOOP",
     opcode_info=DualKeyDict({
-        ("gceClassesOOP_createClassAt", "&gceClassesOOP::create class at (NAME) {:SHADOW:} {SUBSTACK}"): OpcodeInfo(
+        ("gceClassesOOP_logStacks", "&gceClassesOOP::logStacks"): OpcodeInfo(
+            opcode_type=OpcodeType.STATEMENT,
+            inputs=DualKeyDict(),
+            dropdowns=DualKeyDict(),
+            can_have_monitor=False,
+            monitor_id_behaviour=None,
+            has_shadow=False,
+            has_variable_id=False,
+            special_cases={},
+            old_mutation_cls=None,
+            new_mutation_cls=None,
+            allow_embedded=False,
+        ),
+        ("gceClassesOOP_setScopeVar", "&gceClassesOOP::set var (NAME) to (VALUE) in current scope"): OpcodeInfo(
+            opcode_type=OpcodeType.STATEMENT,
+            inputs=DualKeyDict({
+                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
+                ("VALUE", "VALUE"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
+            }),
+            dropdowns=DualKeyDict(),
+            can_have_monitor=False,
+            monitor_id_behaviour=None,
+            has_shadow=False,
+            has_variable_id=False,
+            special_cases={},
+            old_mutation_cls=None,
+            new_mutation_cls=None,
+            allow_embedded=False,
+        ),
+        ("gceClassesOOP_getScopeVar", "&gceClassesOOP::get var (NAME)"): OpcodeInfo(
+            opcode_type=OpcodeType.STRING_REPORTER,
+            inputs=DualKeyDict({
+                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
+            }),
+            dropdowns=DualKeyDict(),
+            can_have_monitor=False,
+            monitor_id_behaviour=None,
+            has_shadow=False,
+            has_variable_id=False,
+            special_cases={},
+            old_mutation_cls=None,
+            new_mutation_cls=None,
+            allow_embedded=False,
+        ),
+        ("gceClassesOOP_hasScopeVar", "&gceClassesOOP::var (NAME) exists in [KIND]?"): OpcodeInfo(
+            opcode_type=OpcodeType.BOOLEAN_REPORTER,
+            inputs=DualKeyDict({
+                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
+            }),
+            dropdowns=DualKeyDict({
+                ("KIND", "KIND"): DropdownInfo(type=ExtensionDropdownType.variableAvailableKind),
+            }),
+            can_have_monitor=False,
+            monitor_id_behaviour=None,
+            has_shadow=False,
+            has_variable_id=False,
+            special_cases={},
+            old_mutation_cls=None,
+            new_mutation_cls=None,
+            allow_embedded=False,
+        ),
+        ("gceClassesOOP_deleteScopeVar", "&gceClassesOOP::delete var (NAME) in current scope"): OpcodeInfo(
+            opcode_type=OpcodeType.STATEMENT,
+            inputs=DualKeyDict({
+                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
+            }),
+            dropdowns=DualKeyDict(),
+            can_have_monitor=False,
+            monitor_id_behaviour=None,
+            has_shadow=False,
+            has_variable_id=False,
+            special_cases={},
+            old_mutation_cls=None,
+            new_mutation_cls=None,
+            allow_embedded=False,
+        ),
+        ("gceClassesOOP_allVariables", "&gceClassesOOP::all variables in [KIND]"): OpcodeInfo(
+            opcode_type=OpcodeType.STRING_REPORTER,
+            inputs=DualKeyDict(),
+            dropdowns=DualKeyDict({
+                ("KIND", "KIND"): DropdownInfo(type=ExtensionDropdownType.variableAvailableKind),
+            }),
+            can_have_monitor=False,
+            monitor_id_behaviour=None,
+            has_shadow=False,
+            has_variable_id=False,
+            special_cases={},
+            old_mutation_cls=None,
+            new_mutation_cls=None,
+            allow_embedded=False,
+        ),
+        ("gceClassesOOP_createVarScope", "&gceClassesOOP::create local variable scope {SUBSTACK}"): OpcodeInfo(
+            opcode_type=OpcodeType.STATEMENT,
+            inputs=DualKeyDict({
+                ("SUBSTACK", "SUBSTACK"): InputInfo(type=BuiltinInputType.SCRIPT, menu=None),
+            }),
+            dropdowns=DualKeyDict(),
+            can_have_monitor=False,
+            monitor_id_behaviour=None,
+            has_shadow=False,
+            has_variable_id=False,
+            special_cases={},
+            old_mutation_cls=None,
+            new_mutation_cls=None,
+            allow_embedded=False,
+        ),
+        ("gceClassesOOP_bindVarToScope", "&gceClassesOOP::bind [KIND] variable (NAME) to current scope"): OpcodeInfo(
+            opcode_type=OpcodeType.STATEMENT,
+            inputs=DualKeyDict({
+                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
+            }),
+            dropdowns=DualKeyDict({
+                ("KIND", "KIND"): DropdownInfo(type=ExtensionDropdownType.bindVarOriginKind),
+            }),
+            can_have_monitor=False,
+            monitor_id_behaviour=None,
+            has_shadow=False,
+            has_variable_id=False,
+            special_cases={},
+            old_mutation_cls=None,
+            new_mutation_cls=None,
+            allow_embedded=False,
+        ),
+        ("gceClassesOOP_createClassAt", "&gceClassesOOP::create class at var (NAME) {:SHADOW:} {SUBSTACK}"): OpcodeInfo(
             opcode_type=OpcodeType.STATEMENT,
             inputs=DualKeyDict({
                 ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
@@ -47,7 +181,7 @@ extension = OpcodeInfoGroup(
             new_mutation_cls=None,
             allow_embedded=False,
         ),
-        ("gceClassesOOP_createSubclassAt", "&gceClassesOOP::create subclass at (NAME) with superclass (SUPERCLASS) {:SHADOW:} {SUBSTACK}"): OpcodeInfo(
+        ("gceClassesOOP_createSubclassAt", "&gceClassesOOP::create subclass at var (NAME) with superclass (SUPERCLASS) {:SHADOW:} {SUBSTACK}"): OpcodeInfo(
             opcode_type=OpcodeType.STATEMENT,
             inputs=DualKeyDict({
                 ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
@@ -130,93 +264,6 @@ extension = OpcodeInfoGroup(
             new_mutation_cls=None,
             allow_embedded=True,
         ),
-        ("gceClassesOOP_setClass", "&gceClassesOOP::set class (NAME) to (CLASS)"): OpcodeInfo(
-            opcode_type=OpcodeType.STATEMENT,
-            inputs=DualKeyDict({
-                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-                ("CLASS", "CLASS"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-            }),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=False,
-        ),
-        ("gceClassesOOP_getClass", "&gceClassesOOP::get class (NAME)"): OpcodeInfo(
-            opcode_type=OpcodeType.STRING_REPORTER,
-            inputs=DualKeyDict({
-                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-            }),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=False,
-        ),
-        ("gceClassesOOP_classExists", "&gceClassesOOP::class (NAME) exists?"): OpcodeInfo(
-            opcode_type=OpcodeType.BOOLEAN_REPORTER,
-            inputs=DualKeyDict({
-                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-            }),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=False,
-        ),
-        ("gceClassesOOP_allClasses", "&gceClassesOOP::all classes"): OpcodeInfo(
-            opcode_type=OpcodeType.STRING_REPORTER,
-            inputs=DualKeyDict(),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=False,
-        ),
-        ("gceClassesOOP_deleteClass", "&gceClassesOOP::delete class (NAME)"): OpcodeInfo(
-            opcode_type=OpcodeType.STATEMENT,
-            inputs=DualKeyDict({
-                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-            }),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=False,
-        ),
-        ("gceClassesOOP_deleteAllClasses", "&gceClassesOOP::delete all classes"): OpcodeInfo(
-            opcode_type=OpcodeType.STATEMENT,
-            inputs=DualKeyDict(),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=False,
-        ),
         ("gceClassesOOP_isSubclass", "&gceClassesOOP::is (SUBCLASS) a subclass of (SUPERCLASS) ?"): OpcodeInfo(
             opcode_type=OpcodeType.BOOLEAN_REPORTER,
             inputs=DualKeyDict({
@@ -248,12 +295,11 @@ extension = OpcodeInfoGroup(
             new_mutation_cls=None,
             allow_embedded=False,
         ),
-        ("gceClassesOOP_defineInstanceMethod", "&gceClassesOOP::define instance method (NAME) {:SHADOW1:} {:SHADOW2:} {SUBSTACK}"): OpcodeInfo(
+        ("gceClassesOOP_defineInstanceMethod", "&gceClassesOOP::define instance method (NAME) {:SHADOW1:} {SUBSTACK}"): OpcodeInfo(
             opcode_type=OpcodeType.STATEMENT,
             inputs=DualKeyDict({
                 ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
                 ("SHADOW1", "SHADOW1"): InputInfo(type=ExtensionInputType.S_gceClassesOOP_self, menu=None),
-                ("SHADOW2", "SHADOW2"): InputInfo(type=ExtensionInputType.S_gceClassesOOP_allFunctionArgs, menu=None),
                 ("SUBSTACK", "SUBSTACK"): InputInfo(type=BuiltinInputType.SCRIPT, menu=None),
             }),
             dropdowns=DualKeyDict(),
@@ -266,11 +312,10 @@ extension = OpcodeInfoGroup(
             new_mutation_cls=None,
             allow_embedded=False,
         ),
-        ("gceClassesOOP_defineSpecialMethod", "&gceClassesOOP::define [SPECIAL_METHOD] method {:SHADOW1:} {:SHADOW2:} {SUBSTACK}"): OpcodeInfo(
+        ("gceClassesOOP_defineSpecialMethod", "&gceClassesOOP::define [SPECIAL_METHOD] method {:SHADOW1:} {SUBSTACK}"): OpcodeInfo(
             opcode_type=OpcodeType.STATEMENT,
             inputs=DualKeyDict({
                 ("SHADOW1", "SHADOW1"): InputInfo(type=ExtensionInputType.S_gceClassesOOP_self, menu=None),
-                ("SHADOW2", "SHADOW2"): InputInfo(type=ExtensionInputType.S_gceClassesOOP_allFunctionArgs, menu=None),
                 ("SUBSTACK", "SUBSTACK"): InputInfo(type=BuiltinInputType.SCRIPT, menu=None),
             }),
             dropdowns=DualKeyDict({
@@ -315,7 +360,7 @@ extension = OpcodeInfoGroup(
             allow_embedded=False,
         ),
         ("gceClassesOOP_callSuperInitMethod", "&gceClassesOOP::call super init method with positional args (POSARGS)"): OpcodeInfo(
-            opcode_type=OpcodeType.STATEMENT,
+            opcode_type=OpcodeType.STRING_REPORTER,
             inputs=DualKeyDict({
                 ("POSARGS", "POSARGS"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
             }),
@@ -457,11 +502,10 @@ extension = OpcodeInfoGroup(
             new_mutation_cls=None,
             allow_embedded=False,
         ),
-        ("gceClassesOOP_defineStaticMethod", "&gceClassesOOP::define static method (NAME) {:SHADOW:} {SUBSTACK}"): OpcodeInfo(
+        ("gceClassesOOP_defineStaticMethod", "&gceClassesOOP::define static method (NAME) {SUBSTACK}"): OpcodeInfo(
             opcode_type=OpcodeType.STATEMENT,
             inputs=DualKeyDict({
                 ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-                ("SHADOW", "SHADOW"): InputInfo(type=ExtensionInputType.S_gceClassesOOP_allFunctionArgs, menu=None),
                 ("SUBSTACK", "SUBSTACK"): InputInfo(type=BuiltinInputType.SCRIPT, menu=None),
             }),
             dropdowns=DualKeyDict(),
@@ -652,11 +696,10 @@ extension = OpcodeInfoGroup(
             new_mutation_cls=None,
             allow_embedded=False,
         ),
-        ("gceClassesOOP_createFunctionAt", "&gceClassesOOP::create function at (NAME) {:SHADOW:} {SUBSTACK}"): OpcodeInfo(
+        ("gceClassesOOP_createFunctionAt", "&gceClassesOOP::create function at var (NAME) {SUBSTACK}"): OpcodeInfo(
             opcode_type=OpcodeType.STATEMENT,
             inputs=DualKeyDict({
                 ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-                ("SHADOW", "SHADOW"): InputInfo(type=ExtensionInputType.S_gceClassesOOP_allFunctionArgs, menu=None),
                 ("SUBSTACK", "SUBSTACK"): InputInfo(type=BuiltinInputType.SCRIPT, menu=None),
             }),
             dropdowns=DualKeyDict(),
@@ -669,11 +712,10 @@ extension = OpcodeInfoGroup(
             new_mutation_cls=None,
             allow_embedded=False,
         ),
-        ("gceClassesOOP_createFunctionNamed", "&gceClassesOOP::create function named (NAME) {:SHADOW:} {SUBSTACK}"): OpcodeInfo(
+        ("gceClassesOOP_createFunctionNamed", "&gceClassesOOP::create function named (NAME) {SUBSTACK}"): OpcodeInfo(
             opcode_type=OpcodeType.STRING_REPORTER,
             inputs=DualKeyDict({
                 ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-                ("SHADOW", "SHADOW"): InputInfo(type=ExtensionInputType.S_gceClassesOOP_allFunctionArgs, menu=None),
                 ("SUBSTACK", "SUBSTACK"): InputInfo(type=BuiltinInputType.SCRIPT, menu=None),
             }),
             dropdowns=DualKeyDict(),
@@ -685,34 +727,6 @@ extension = OpcodeInfoGroup(
             old_mutation_cls=None,
             new_mutation_cls=None,
             allow_embedded=False,
-        ),
-        ("gceClassesOOP_allFunctionArgs", "&gceClassesOOP::function arguments"): OpcodeInfo(
-            opcode_type=OpcodeType.STRING_REPORTER,
-            inputs=DualKeyDict(),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=True,
-        ),
-        ("gceClassesOOP_functionArg", "&gceClassesOOP::function arg (NAME)"): OpcodeInfo(
-            opcode_type=OpcodeType.STRING_REPORTER,
-            inputs=DualKeyDict({
-                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-            }),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=True,
         ),
         ("gceClassesOOP_return", "&gceClassesOOP::return (VALUE)"): OpcodeInfo(
             opcode_type=OpcodeType.ENDING_STATEMENT,
@@ -729,96 +743,12 @@ extension = OpcodeInfoGroup(
             new_mutation_cls=None,
             allow_embedded=False,
         ),
-        ("gceClassesOOP_transferFunctionArgsToTempVars", "&gceClassesOOP::transfer arguments to temporary variables"): OpcodeInfo(
-            opcode_type=OpcodeType.STATEMENT,
-            inputs=DualKeyDict(),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=False,
-        ),
         ("gceClassesOOP_callFunction", "&gceClassesOOP::call function (FUNC) with positional args (POSARGS)"): OpcodeInfo(
             opcode_type=OpcodeType.STRING_REPORTER,
             inputs=DualKeyDict({
                 ("FUNC", "FUNC"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
                 ("POSARGS", "POSARGS"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
             }),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=False,
-        ),
-        ("gceClassesOOP_getFunction", "&gceClassesOOP::get function (NAME)"): OpcodeInfo(
-            opcode_type=OpcodeType.STRING_REPORTER,
-            inputs=DualKeyDict({
-                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-            }),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=False,
-        ),
-        ("gceClassesOOP_functionExists", "&gceClassesOOP::function (NAME) exists?"): OpcodeInfo(
-            opcode_type=OpcodeType.BOOLEAN_REPORTER,
-            inputs=DualKeyDict({
-                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-            }),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=False,
-        ),
-        ("gceClassesOOP_allFunctions", "&gceClassesOOP::all functions"): OpcodeInfo(
-            opcode_type=OpcodeType.STRING_REPORTER,
-            inputs=DualKeyDict(),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=False,
-        ),
-        ("gceClassesOOP_deleteFunction", "&gceClassesOOP::delete function (NAME)"): OpcodeInfo(
-            opcode_type=OpcodeType.STATEMENT,
-            inputs=DualKeyDict({
-                ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
-            }),
-            dropdowns=DualKeyDict(),
-            can_have_monitor=False,
-            monitor_id_behaviour=None,
-            has_shadow=False,
-            has_variable_id=False,
-            special_cases={},
-            old_mutation_cls=None,
-            new_mutation_cls=None,
-            allow_embedded=False,
-        ),
-        ("gceClassesOOP_deleteAllFunctions", "&gceClassesOOP::delete all functions"): OpcodeInfo(
-            opcode_type=OpcodeType.STATEMENT,
-            inputs=DualKeyDict(),
             dropdowns=DualKeyDict(),
             can_have_monitor=False,
             monitor_id_behaviour=None,
@@ -897,6 +827,32 @@ extension = OpcodeInfoGroup(
             can_have_monitor=False,
             monitor_id_behaviour=None,
             has_shadow=False,
+            has_variable_id=False,
+            special_cases={},
+            old_mutation_cls=None,
+            new_mutation_cls=None,
+            allow_embedded=False,
+        ),
+        ("gceClassesOOP_menu_variableAvailableKind", "&gceClassesOOP::#menu:variableAvailableKind"): OpcodeInfo(
+            opcode_type=OpcodeType.MENU,
+            inputs=DualKeyDict(),
+            dropdowns=DualKeyDict(),
+            can_have_monitor=False,
+            monitor_id_behaviour=None,
+            has_shadow=True,
+            has_variable_id=False,
+            special_cases={},
+            old_mutation_cls=None,
+            new_mutation_cls=None,
+            allow_embedded=False,
+        ),
+        ("gceClassesOOP_menu_bindVarOriginKind", "&gceClassesOOP::#menu:bindVarOriginKind"): OpcodeInfo(
+            opcode_type=OpcodeType.MENU,
+            inputs=DualKeyDict(),
+            dropdowns=DualKeyDict(),
+            can_have_monitor=False,
+            monitor_id_behaviour=None,
+            has_shadow=True,
             has_variable_id=False,
             special_cases={},
             old_mutation_cls=None,
