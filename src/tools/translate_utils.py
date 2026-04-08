@@ -22,7 +22,7 @@ class InputValue:
                 elif isinstance(self.value, str):
                     return input_type(block=None, immediate=self.value)
                 elif isinstance(self.value, bool):
-                    return input_type(block=utils.boolean_block(self.value), immediate="")
+                    return input_type(block=PMBlocks.boolean_block(self.value), immediate="")
                 else: raise ValueError(self.value, type(self.value))
 
             case p.SRBlockAndDropdownInputValue:
@@ -64,7 +64,7 @@ class InputValue:
             return value
 
 
-class utils:
+class PMBlocks:
     @staticmethod
     def if_else_block(condition: InputValue, if_substack: InputValue, else_substack: InputValue) -> p.SRBlock:
         return p.SRBlock(
@@ -82,11 +82,8 @@ class utils:
             opcode="&operators::true" if value else "&operators::false",
         )
 
-    # Helper for standard dropdown values
-    @staticmethod
-    def dd_standard(value: str) -> p.SRDropdownValue:
-        return p.SRDropdownValue(p.DropdownValueKind.STANDARD, value)
 
+class CBlocks:
     # ---------------------- Class manipulation ----------------------
     @staticmethod
     def create_class_at(name: InputValue, substack: InputValue | None = None) -> p.SRBlock:
@@ -94,7 +91,7 @@ class utils:
             opcode="&gceClassesOOP::create class at var (NAME) {:SHADOW:} {SUBSTACK}",
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(InputValue(utils.class_being_created()), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(InputValue(CBlocks.class_being_created()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
@@ -106,7 +103,7 @@ class utils:
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
                 "SUPERCLASS": InputValue.try_as_type(superclass, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(InputValue(utils.class_being_created()), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(InputValue(CBlocks.class_being_created()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
@@ -137,7 +134,7 @@ class utils:
         return p.SRBlock(
             opcode="&gceClassesOOP::var (NAME) exists in [KIND]?",
             inputs={"NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue)},
-            dropdowns={"KIND": utils.dd_variableAvailableKind(kind)},
+            dropdowns={"KIND": CBlocks.dd_variableAvailableKind(kind)},
         )
 
     @staticmethod
@@ -151,7 +148,7 @@ class utils:
     def all_variables(kind: str) -> p.SRBlock:
         return p.SRBlock(
             opcode="&gceClassesOOP::all variables in [KIND]",
-            dropdowns={"KIND": utils.dd_variableAvailableKind(kind)},
+            dropdowns={"KIND": CBlocks.dd_variableAvailableKind(kind)},
         )
 
     @staticmethod
@@ -166,7 +163,7 @@ class utils:
         return p.SRBlock(
             opcode="&gceClassesOOP::bind [KIND] variable (NAME) to current scope",
             inputs={"NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue)},
-            dropdowns={"KIND": utils.dd_bindVarOriginKind(kind)},
+            dropdowns={"KIND": CBlocks.dd_bindVarOriginKind(kind)},
         )
 
     @staticmethod
@@ -175,7 +172,7 @@ class utils:
             opcode="&gceClassesOOP::create class named (NAME) {:SHADOW:} {SUBSTACK}",
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(InputValue(utils.class_being_created()), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(InputValue(CBlocks.class_being_created()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
@@ -187,7 +184,7 @@ class utils:
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
                 "SUPERCLASS": InputValue.try_as_type(superclass, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(InputValue(utils.class_being_created()), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(InputValue(CBlocks.class_being_created()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
@@ -198,7 +195,7 @@ class utils:
             opcode="&gceClassesOOP::on class (CLASS) {:SHADOW:} {SUBSTACK}",
             inputs={
                 "CLASS": InputValue.try_as_type(class_name, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(InputValue(utils.class_being_created()), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(InputValue(CBlocks.class_being_created()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
@@ -270,7 +267,7 @@ class utils:
             opcode="&gceClassesOOP::define instance method (NAME) {:SHADOW:} {SUBSTACK}",
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(InputValue(utils.self_block()), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(InputValue(CBlocks.self_block()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
@@ -280,10 +277,10 @@ class utils:
         return p.SRBlock(
             opcode="&gceClassesOOP::define [SPECIAL_METHOD] method {:SHADOW:} {SUBSTACK}",
             inputs={
-                "SHADOW": InputValue.try_as_type(InputValue(utils.self_block()), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(InputValue(CBlocks.self_block()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
-            dropdowns={"SPECIAL_METHOD": utils.dd_specialMethod(special)},
+            dropdowns={"SPECIAL_METHOD": CBlocks.dd_specialMethod(special)},
         )
 
     @staticmethod
@@ -313,7 +310,7 @@ class utils:
             opcode="&gceClassesOOP::define getter (NAME) {:SHADOW:} {SUBSTACK}",
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
-                "SHADOW": InputValue.try_as_type(InputValue(utils.self_block()), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(InputValue(CBlocks.self_block()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
@@ -324,8 +321,8 @@ class utils:
             opcode="&gceClassesOOP::define setter (NAME) {:SHADOW1:} {:SHADOW2:} {SUBSTACK}",
             inputs={
                 "NAME": InputValue.try_as_type(name, p.SRBlockAndTextInputValue),
-                "SHADOW1": InputValue.try_as_type(InputValue(utils.self_block()), p.SREmbeddedBlockInputValue),
-                "SHADOW2": InputValue.try_as_type(InputValue(utils.define_setter_value()), p.SREmbeddedBlockInputValue),
+                "SHADOW1": InputValue.try_as_type(InputValue(CBlocks.self_block()), p.SREmbeddedBlockInputValue),
+                "SHADOW2": InputValue.try_as_type(InputValue(CBlocks.define_setter_value()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
         )
@@ -339,10 +336,10 @@ class utils:
         return p.SRBlock(
             opcode="&gceClassesOOP::define operator method [OPERATOR_KIND] {:SHADOW:} {SUBSTACK}",
             inputs={
-                "SHADOW": InputValue.try_as_type(InputValue(utils.operator_other_value()), p.SREmbeddedBlockInputValue),
+                "SHADOW": InputValue.try_as_type(InputValue(CBlocks.operator_other_value()), p.SREmbeddedBlockInputValue),
                 "SUBSTACK": InputValue.try_as_type(substack, p.SRScriptInputValue),
             },
-            dropdowns={"OPERATOR_KIND": utils.dd_operatorMethod(operator_kind)},
+            dropdowns={"OPERATOR_KIND": CBlocks.dd_operatorMethod(operator_kind)},
         )
 
     @staticmethod
@@ -396,7 +393,7 @@ class utils:
         return p.SRBlock(
             opcode="&gceClassesOOP::[PROPERTY] names of class (CLASS)",
             inputs={"CLASS": InputValue.try_as_type(class_name, p.SRBlockAndTextInputValue)},
-            dropdowns={"PROPERTY": utils.dd_classProperty(property_name)},
+            dropdowns={"PROPERTY": CBlocks.dd_classProperty(property_name)},
         )
 
     # ---------------------- Instances / attributes ----------------------

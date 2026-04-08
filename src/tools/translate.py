@@ -6,11 +6,11 @@ sys.path.append(
 
 import argparse
 import dcst
-from tools.translate_utils import InputValue, utils
+from tools.translate_utils import InputValue, CBlocks, PMBlocks
 from gceutils import AbstractTreePath
 from pathlib import Path
 import pmp_manip as p
-from typing import Any, Iterable
+from typing import Iterable
 
 
 class RestrictedTranslator(dcst.NodeTransformer):
@@ -29,7 +29,7 @@ class RestrictedTranslator(dcst.NodeTransformer):
         self.generic_visit(node, path)
         if len(node.targets) > 1:
             raise NotImplementedError("Multiple assignment is not supported yet.")
-        return utils.set_var(
+        return CBlocks.set_var(
             name=node.targets[0],
             value=node.value,
         )
@@ -37,7 +37,7 @@ class RestrictedTranslator(dcst.NodeTransformer):
     def visit_ClassDef(self, node: dcst.ClassDef, path: AbstractTreePath) -> p.SRBlock:
         self.generic_visit(node, path)
         #ancestor = self.get_ancestor_of_types(path, dcst.SUBDEFINITION_ALLOWING_CLASSES)
-        return utils.create_class_at(
+        return CBlocks.create_class_at(
             name=InputValue(node.name),
             substack=InputValue(node.body),
             #substack=InputValue([item for item in node.body if isinstance(item, p.SRBlock)]),
@@ -73,16 +73,16 @@ class RestrictedTranslator(dcst.NodeTransformer):
         right = node.comparators[0]
 
         match type(node.ops[0]):
-            case dcst.Eq: return utils.operator_equals(left, right)
-            case dcst.Gt: return utils.operator_gt(left, right)
-            case dcst.GtE: return utils.operator_gte(left, right)
-            case dcst.In: return utils.operator_contains(left, right)
-            case dcst.Is: return utils.is_block(left, right)
-            case dcst.IsNot: return utils.operator_not(utils.is_block(left, right))
-            case dcst.Lt: return utils.operator_lt(left, right)
-            case dcst.LtE: return utils.operator_lte(left, right)
-            case dcst.NotEq: return utils.operator_notequal(left, right)
-            case dcst.NotIn: return utils.operator_not(utils.operator_contains(left, right))
+            case dcst.Eq: return CBlocks.operator_equals(left, right)
+            case dcst.Gt: return CBlocks.operator_gt(left, right)
+            case dcst.GtE: return CBlocks.operator_gte(left, right)
+            case dcst.In: return CBlocks.operator_contains(left, right)
+            case dcst.Is: return CBlocks.is_block(left, right)
+            case dcst.IsNot: return CBlocks.operator_not(CBlocks.is_block(left, right))
+            case dcst.Lt: return CBlocks.operator_lt(left, right)
+            case dcst.LtE: return CBlocks.operator_lte(left, right)
+            case dcst.NotEq: return CBlocks.operator_notequal(left, right)
+            case dcst.NotIn: return CBlocks.operator_not(CBlocks.operator_contains(left, right))
 
         print(node)
         raise NotImplementedError(f"Comparison operator {type(node.ops[0])} is not supported yet.")
@@ -92,13 +92,13 @@ class RestrictedTranslator(dcst.NodeTransformer):
         if isinstance(node.value, (str, bool)):
             return InputValue(node.value)
         elif node.value is None:
-            return InputValue(utils.nothing())
+            return InputValue(CBlocks.nothing())
         else:
             return node
 
     def visit_Expr(self, node: dcst.Expr, path: AbstractTreePath) -> p.SRBlock:
         self.generic_visit(node, path)
-        return utils.execute_expression(node.value)
+        return CBlocks.execute_expression(node.value)
 
     def visit_FunctionDef(self, node: dcst.FunctionDef, path: AbstractTreePath) -> p.SRBlock:
         self.generic_visit(node, path)
@@ -106,13 +106,13 @@ class RestrictedTranslator(dcst.NodeTransformer):
         name = InputValue(node.name)
         substack = InputValue(node.body)
         if isinstance(ancestor, dcst.ClassDef):
-            return utils.define_instance_method(name, substack)
+            return CBlocks.define_instance_method(name, substack)
         else:
-            return utils.create_function_at(name, substack)
+            return CBlocks.create_function_at(name, substack)
 
     def visit_If(self, node: dcst.If, path: AbstractTreePath) -> p.SRBlock:
         self.generic_visit(node, path)
-        return utils.if_else_block(
+        return PMBlocks.if_else_block(
             condition=node.test,
             if_substack=InputValue(node.body),
             else_substack=InputValue(node.orelse),
@@ -126,9 +126,9 @@ class RestrictedTranslator(dcst.NodeTransformer):
         for val in node.values[1:]:
             match type(node.op):
                 case dcst.And:
-                    result = InputValue(utils.operator_and(result, val))
+                    result = InputValue(CBlocks.operator_and(result, val))
                 case dcst.Or:
-                    result = InputValue(utils.operator_or(result, val))
+                    result = InputValue(CBlocks.operator_or(result, val))
 
         return result
 
