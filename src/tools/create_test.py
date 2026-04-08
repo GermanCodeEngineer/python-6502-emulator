@@ -11,6 +11,22 @@ from gceutils import AbstractTreePath
 from pathlib import Path
 import pmp_manip as p
 
+def crate_class_test():
+    return p.SRScript(
+        position=(0, 0),
+        blocks=[
+            c.create_class_at(
+                name=InputValue("Greeter"),
+                substack=InputValue([
+                    c.define_instance_method(
+                        InputValue("greet"), InputValue([
+                            c.return_(InputValue("Hello, World!"))
+                        ])
+                    )
+                ])
+            )
+        ]
+    )
 
 def create_test() -> None:
     cfg = p.get_default_config()
@@ -19,13 +35,19 @@ def create_test() -> None:
     p.init_config(cfg)
 
     project = p.SRProject.create_empty()
-    project.stage.scripts = []
+    project.stage.scripts = [crate_class_test()]
+    project.extensions = [p.SRCustomExtension(
+        id="gceClassesOOP",
+        url=("https://raw.githubusercontent.com/GermanCodeEngineer/PM-Extensions/"+
+        "refs/heads/main/extensions/classes.js"),
+    )]
 
     print(50*"=", "Created Project", 50*"=")
     print(project)
+    project.add_all_extensions_to_info_api(p.info_api)
     project.validate(AbstractTreePath(), p.info_api)
     frproject = project.to_first(p.info_api)
-    frproject.to_file("generated.pmp")
+    frproject.to_file("classes_test.pmp")
     
     
 def main() -> None:

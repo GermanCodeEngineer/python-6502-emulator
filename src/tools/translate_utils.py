@@ -60,10 +60,8 @@ class InputValue:
     @staticmethod
     def try_as_type[_T: p.SRInputValue](value: InputValue | Any, input_type: type[_T]) -> _T | Any:
         if isinstance(value, InputValue):
-            print("try_as_type", repr(value)[:100], "as", repr(value.as_type(input_type))[:100])
             return value.as_type(input_type)
         else:
-            print("try_as_type", repr(value)[:100], "(no conversion)")
             return value
 
 
