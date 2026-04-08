@@ -6,7 +6,8 @@ sys.path.append(
 
 import argparse
 import dcst
-from tools.translate_utils import InputValue, CBlocks, PMBlocks
+from tools.translate_blocks import CBlocks, PMBlocks
+from tools.translate_utils import InputValue
 from gceutils import AbstractTreePath
 from pathlib import Path
 import pmp_manip as p
