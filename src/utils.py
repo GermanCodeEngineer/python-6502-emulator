@@ -8,10 +8,6 @@ import pmp_manip as p
 class InputValue:
     value: list[p.SRBlock] | p.SRBlock | str | bool | p.SRDropdownValue
 
-    def __post_init__(self) -> None:
-        if isinstance(self.value, InputValue):
-            raise ValueError("InputValue cannot contain another InputValue. Got: " + repr(self.value))
-
 
     # TODO: add copy?
     def as_type[_T: p.SRInputValue](self, input_type: type[_T]) -> _T:
@@ -59,6 +55,9 @@ class InputValue:
     # TODO: remove temporary
     @staticmethod
     def try_as_type[_T: p.SRInputValue](value: InputValue | Any, input_type: type[_T]) -> _T | Any:
+        if (not isinstance(value, InputValue)) and isinstance(value, (list, p.SRBlock, str, bool, p.SRDropdownValue)):
+            value = InputValue(value)
+
         if isinstance(value, InputValue):
             return value.as_type(input_type)
         else:

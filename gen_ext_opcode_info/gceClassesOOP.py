@@ -85,7 +85,7 @@ extension = OpcodeInfoGroup(
             new_mutation_cls=None,
             allow_embedded=False,
         ),
-        ("gceClassesOOP_hasScopeVar", "&gceClassesOOP::var (NAME) exists in [KIND]?"): OpcodeInfo(
+        ("gceClassesOOP_scopeVarExists", "&gceClassesOOP::var (NAME) exists in [KIND]?"): OpcodeInfo(
             opcode_type=OpcodeType.BOOLEAN_REPORTER,
             inputs=DualKeyDict({
                 ("NAME", "NAME"): InputInfo(type=BuiltinInputType.TEXT, menu=None),
@@ -312,7 +312,7 @@ extension = OpcodeInfoGroup(
             new_mutation_cls=None,
             allow_embedded=False,
         ),
-        ("gceClassesOOP_defineSpecialMethod", "&gceClassesOOP::define [SPECIAL_METHOD] method {:SHADOW:} {SUBSTACK}"): OpcodeInfo(
+        ("gceClassesOOP_defineSpecialMethod", "&gceClassesOOP::define [SPECIAL_METHOD] instance method {:SHADOW:} {SUBSTACK}"): OpcodeInfo(
             opcode_type=OpcodeType.STATEMENT,
             inputs=DualKeyDict({
                 ("SHADOW", "SHADOW"): InputInfo(type=ExtensionInputType.S_gceClassesOOP_self, menu=None),

@@ -6,24 +6,24 @@ sys.path.append(
 
 import argparse
 from tools.translate_blocks import CBlocks as c, PMBlocks
-from tools.translate_utils import InputValue
+from utils import InputValue
 from gceutils import AbstractTreePath
 from pathlib import Path
 import pmp_manip as p
 
-def crate_class_test():
+def create_class_test():
     return p.SRScript(
         position=(0, 0),
         blocks=[
             c.create_class_at(
-                name=InputValue("Greeter"),
-                substack=InputValue([
+                name="Greeter",
+                substack=[
                     c.define_instance_method(
-                        InputValue("greet"), InputValue([
-                            c.return_(InputValue("Hello, World!"))
-                        ])
+                        name="greet", substack=[
+                            c.return_("Hello, World!")
+                        ]
                     )
-                ])
+                ]
             )
         ]
     )
@@ -35,7 +35,7 @@ def create_test() -> None:
     p.init_config(cfg)
 
     project = p.SRProject.create_empty()
-    project.stage.scripts = [crate_class_test()]
+    project.stage.scripts = [create_class_test()]
     project.extensions = [p.SRCustomExtension(
         id="gceClassesOOP",
         url=("https://raw.githubusercontent.com/GermanCodeEngineer/PM-Extensions/"+
@@ -48,8 +48,8 @@ def create_test() -> None:
     project.validate(AbstractTreePath(), p.info_api)
     frproject = project.to_first(p.info_api)
     frproject.to_file("classes_test.pmp")
-    
-    
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     args = parser.parse_args()

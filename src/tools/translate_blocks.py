@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pmp_manip as p
 
-from tools.translate_utils import InputValue
+from utils import InputValue
 
 
 class PMBlocks:

@@ -210,8 +210,26 @@ class _DCSTMeta(type):
         return tuple(field.name for field in get_fields(cls))
 
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class DCST(_ast.AST, metaclass=_DCSTMeta):
+    def __init__(self, **kwargs):
+        STUPID_FIELDS = {
+            "lineno": 0,
+            "col_offset": 0,
+            "end_lineno": 0,
+            "end_col_offset": 0,
+        }
+
+        for field_name, default_value in STUPID_FIELDS.items():
+            if field_name not in type(self)._fields:
+                continue
+            if field_name in kwargs:
+                continue
+            kwargs[field_name] = default_value
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
     @property # To allow _ast.iter_fields to work on DCST nodes
     def _fields(self) -> tuple[str, ...]:
         return type(self)._fields
@@ -290,7 +308,7 @@ class DCST(_ast.AST, metaclass=_DCSTMeta):
         return ast_class(**kwargs)
 
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class alias(DCST):
     name: str
     asname: str | None
@@ -299,7 +317,7 @@ class alias(DCST):
     end_lineno: int | None = field(grepr=False)
     end_col_offset: int | None = field(grepr=False)
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class arg(DCST):
     lineno: int | None = field(grepr=False)
     col_offset: int | None = field(grepr=False)
@@ -309,7 +327,7 @@ class arg(DCST):
     annotation: expr | None
     type_comment: str | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class arguments(DCST):
     posonlyargs: list[arg]
     args: list[arg]
@@ -319,40 +337,40 @@ class arguments(DCST):
     kwarg: arg | None
     defaults: list[expr]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class boolop(DCST):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class cmpop(DCST):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class comprehension(DCST):
     target: expr
     iter: expr
     ifs: list[expr]
     is_async: int
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class excepthandler(DCST):
     lineno: int | None = field(grepr=False)
     col_offset: int | None = field(grepr=False)
     end_lineno: int | None = field(grepr=False)
     end_col_offset: int | None = field(grepr=False)
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class expr(DCST):
     lineno: int | None = field(grepr=False)
     col_offset: int | None = field(grepr=False)
     end_lineno: int | None = field(grepr=False)
     end_col_offset: int | None = field(grepr=False)
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class expr_context(DCST):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class keyword(DCST):
     lineno: int | None = field(grepr=False)
     col_offset: int | None = field(grepr=False)
@@ -361,81 +379,81 @@ class keyword(DCST):
     arg: str | None
     value: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class match_case(DCST):
     pattern: pattern
     guard: expr | None
     body: list[stmt]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class mod(DCST):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class operator(DCST):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class pattern(DCST):
     lineno: int | None = field(grepr=False)
     col_offset: int | None = field(grepr=False)
     end_lineno: int | None = field(grepr=False)
     end_col_offset: int | None = field(grepr=False)
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class stmt(DCST):
     lineno: int | None = field(grepr=False)
     col_offset: int | None = field(grepr=False)
     end_lineno: int | None = field(grepr=False)
     end_col_offset: int | None = field(grepr=False)
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class type_ignore(DCST):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class type_param(DCST):
     lineno: int | None = field(grepr=False)
     col_offset: int | None = field(grepr=False)
     end_lineno: int | None = field(grepr=False)
     end_col_offset: int | None = field(grepr=False)
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class unaryop(DCST):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class withitem(DCST):
     context_expr: expr
     optional_vars: expr | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Add(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class And(boolop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class AnnAssign(stmt):
     target: Name | Attribute | Subscript
     annotation: expr
     value: expr | None
     simple: int
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Assert(stmt):
     test: expr
     msg: expr | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Assign(stmt):
     targets: list[expr]
     value: expr
     type_comment: str | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class AsyncFor(stmt):
     target: expr
     iter: expr
@@ -443,7 +461,7 @@ class AsyncFor(stmt):
     orelse: list[stmt]
     type_comment: str | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class AsyncFunctionDef(stmt):
     name: str
     args: arguments
@@ -453,62 +471,62 @@ class AsyncFunctionDef(stmt):
     type_comment: str | None
     type_params: list[type_param]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class AsyncWith(stmt):
     items: list[withitem]
     body: list[stmt]
     type_comment: str | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Attribute(expr):
     value: expr
     attr: str
     ctx: expr_context
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class AugAssign(stmt):
     target: Name | Attribute | Subscript
     op: operator
     value: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Await(expr):
     value: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class BinOp(expr):
     left: expr
     op: operator
     right: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class BitAnd(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class BitOr(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class BitXor(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class BoolOp(expr):
     op: boolop
     values: list[expr]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Break(stmt):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Call(expr):
     func: expr
     args: list[expr]
     keywords: list[keyword]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class ClassDef(stmt):
     name: str
     bases: list[expr]
@@ -517,67 +535,67 @@ class ClassDef(stmt):
     decorator_list: list[expr]
     type_params: list[type_param]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Compare(expr):
     left: expr
     ops: list[cmpop]
     comparators: list[expr]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Constant(expr):
     value: str | bytes | bool | int | float | complex | None | EllipsisType
     kind: str | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Continue(stmt):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Del(expr_context):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Delete(stmt):
     targets: list[expr]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Dict(expr):
     keys: list[expr | None]
     values: list[expr]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class DictComp(expr):
     key: expr
     value: expr
     generators: list[comprehension]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Div(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Eq(cmpop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class ExceptHandler(excepthandler):
     type: expr | None
     name: str | None
     body: list[stmt]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Expr(stmt):
     value: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Expression(mod):
     body: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class FloorDiv(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class For(stmt):
     target: expr
     iter: expr
@@ -585,13 +603,13 @@ class For(stmt):
     orelse: list[stmt]
     type_comment: str | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class FormattedValue(expr):
     value: expr
     conversion: int
     format_spec: expr | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class FunctionDef(stmt):
     name: str
     args: arguments
@@ -601,320 +619,320 @@ class FunctionDef(stmt):
     type_comment: str | None
     type_params: list[type_param]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class FunctionType(mod):
     argtypes: list[expr]
     returns: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class GeneratorExp(expr):
     elt: expr
     generators: list[comprehension]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Global(stmt):
     names: list[str]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Gt(cmpop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class GtE(cmpop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class If(stmt):
     test: expr
     body: list[stmt]
     orelse: list[stmt]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class IfExp(expr):
     test: expr
     body: expr
     orelse: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Import(stmt):
     names: list[alias]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class ImportFrom(stmt):
     module: str | None
     names: list[alias]
     level: int
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class In(cmpop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Interactive(mod):
     body: list[stmt]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Invert(unaryop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Is(cmpop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class IsNot(cmpop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class JoinedStr(expr):
     values: list[expr]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class LShift(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Lambda(expr):
     args: arguments
     body: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class List(expr):
     elts: list[expr]
     ctx: expr_context
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class ListComp(expr):
     elt: expr
     generators: list[comprehension]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Load(expr_context):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Lt(cmpop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class LtE(cmpop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class MatMult(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Match(stmt):
     subject: expr
     cases: list[match_case]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class MatchAs(pattern):
     pattern: pattern | None
     name: str | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class MatchClass(pattern):
     cls: expr
     patterns: list[pattern]
     kwd_attrs: list[str]
     kwd_patterns: list[pattern]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class MatchMapping(pattern):
     keys: list[expr]
     patterns: list[pattern]
     rest: str | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class MatchOr(pattern):
     patterns: list[pattern]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class MatchSequence(pattern):
     patterns: list[pattern]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class MatchSingleton(pattern):
     value: bool | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class MatchStar(pattern):
     name: str | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class MatchValue(pattern):
     value: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Mod(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Module(mod):
     body: list[stmt]
     type_ignores: list[TypeIgnore]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Mult(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Name(expr):
     id: str
     ctx: expr_context
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class NamedExpr(expr):
     target: Name
     value: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Nonlocal(stmt):
     names: list[str]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Not(unaryop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class NotEq(cmpop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class NotIn(cmpop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Or(boolop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class ParamSpec(type_param):
     name: str
     default_value: expr | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Pass(stmt):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Pow(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class RShift(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Raise(stmt):
     exc: expr | None
     cause: expr | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Return(stmt):
     value: expr | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Set(expr):
     elts: list[expr]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class SetComp(expr):
     elt: expr
     generators: list[comprehension]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Slice(expr):
     lower: expr | None
     upper: expr | None
     step: expr | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Starred(expr):
     value: expr
     ctx: expr_context
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Store(expr_context):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Sub(operator):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Subscript(expr):
     value: expr
     slice: expr
     ctx: expr_context
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Try(stmt):
     body: list[stmt]
     handlers: list[ExceptHandler]
     orelse: list[stmt]
     finalbody: list[stmt]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Tuple(expr):
     elts: list[expr]
     ctx: expr_context
     # I removed the deprecated dims field
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class TypeAlias(stmt):
     name: Name
     type_params: list[type_param]
     value: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class TypeIgnore(type_ignore):
     lineno: int | None = field(grepr=False)
     tag: str
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class TypeVar(type_param):
     name: str
     bound: expr | None
     default_value: expr | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class TypeVarTuple(type_param):
     name: str
     default_value: expr | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class UAdd(unaryop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class USub(unaryop):
     pass
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class UnaryOp(expr):
     op: unaryop
     operand: expr
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class While(stmt):
     test: expr
     body: list[stmt]
     orelse: list[stmt]
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class With(stmt):
     items: list[withitem]
     body: list[stmt]
     type_comment: str | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class Yield(expr):
     value: expr | None
 
-@grepr_dataclass()
+@grepr_dataclass(init=False)
 class YieldFrom(expr):
     value: expr
 
